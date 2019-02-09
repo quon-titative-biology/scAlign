@@ -1,5 +1,5 @@
 Package: scAlign
-Version: 0.99.0
+Version: 0.99.1
 Date: 2019-02-15
 Title: An alignment and integration method for single cell genomics
 Description: An unsupervised deep learning method for data alignment, integration and estimation of per-cell differences in -omic data (e.g. gene expression) across datasets (conditions, tissues, species). See Johansen and Quon (2019) <doi:10.1101/504944> for more details.
@@ -15,7 +15,7 @@ Authors@R:
 URL: https://github.com/ucdavis/quontitativebiology/tree/master/scAlign
 BugReports: https://github.com/ucdavis/quontitativebiology/issues
 biocViews: SingleCell, Alignment, Transcriptomics, DimensionReduction, NeuralNetwork
-Depends: R (>= 3.5.0)
+Depends: R (>= 3.6.0)
 Imports: Seurat,
 	 tensorflow,
 	 tfdatasets,

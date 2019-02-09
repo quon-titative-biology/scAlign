@@ -1,0 +1,302 @@
+#' Add walker loss component
+#'
+#' Creates the walker loss component using embedding representation of
+#' high-dimensional data. Specifies random walk procedure.
+#'
+#' @return Tensorflow loss op
+#'
+#' @param p_target Pairwise cell-cell similarity
+#' @param a Data embeddings
+#' @param b Data embeddings
+#' @param data_shape Dimension of data
+#' @param walker_weight Walker loss component weight
+#' @param visit_weight Visit loss component weight (unused)
+#' @param mode Specifies which walker loss is being computed
+#' @param comp How to compute round trip probabilities
+#' @param betas Value for fixed beta gaussian kernel (unused)
+#' @param diag Whether to include self similarity
+#' @param debug Sets the verbosity level
+#'
+#' @import tensorflow
+#' @import tfdatasets
+#'
+#' @keywords internal
+encoderModel_add_semisup_loss_data_driven = function(p_target, a, b, data_shape, walker_weight=1.0, visit_weight=1.0, mode='source', comp='exp', betas=NULL, diag="zero", debug=TRUE){
+  with(tf$name_scope(paste0('loss_walker_', mode)), {
+    ## Distance in embedding space
+    match_ab = tf$matmul(a, b, transpose_b=TRUE, name=paste0('match_ab_', mode))
+    p_ab = tf$nn$softmax(match_ab, name=paste0('p_ab_', mode))
+    p_ba = tf$nn$softmax(tf$transpose(match_ab), name=paste0('p_ba_', mode))
+    p_aba = tf$matmul(p_ab, p_ba, name=paste0('p_aba_', mode))
+
+    ## Remove diagonal, interested in pairwise similarities not self.
+    if(diag == "zero"){
+      p_aba = tf$matrix_set_diag(p_aba, tf$zeros(shape(data_shape)))
+    }
+
+    ## Conditional probabilities.
+    loss_aba = tf$losses$softmax_cross_entropy(
+        p_target,
+        tf$log(1e-20 + p_aba),
+        weights=walker_weight,
+        scope=paste0('loss_aba_', mode))
+
+    ## Histograms for tensorboard
+    tf$summary$histogram(paste0('p_ab_', mode), p_ab)
+    tf$summary$histogram(paste0('p_ba_', mode), p_ba)
+    tf$summary$histogram(paste0('p_aba_', mode), p_aba)
+    tf$summary$histogram('emb_a', a)
+    tf$summary$histogram('emb_b', b)
+    tf$summary$histogram('T_ij', p_target)
+    tf$summary$histogram('sum_p_ab', tf$reduce_sum(p_ab, as.integer(-1)))
+    tf$summary$histogram('sum_p_ba', tf$reduce_sum(p_ba, as.integer(-1)))
+    tf$summary$scalar('dot_min', tf$reduce_min(match_ab))
+    tf$summary$scalar('dot_max', tf$reduce_max(match_ab))
+    tf$summary$scalar('nnzero-emb_a', tf$count_nonzero(tf$cast(a, tf$float32)))
+    tf$summary$scalar('nnzero-emb_b', tf$count_nonzero(tf$cast(b, tf$float32)))
+
+    ## Record loss
+    tf$summary$scalar(paste0('Loss_aba_', mode), loss_aba)
+  })
+}
+
+#' Add classifier loss component
+#'
+#' Cross entropy of labels and predictions
+#'
+#' @return Tensorflow loss op
+#'
+#' @param logits cell x label logits
+#' @param labels cell x 1 true labels
+#' @param weight Scale of classifier loss component
+#' @param smoothing tensorflow label_smoothing (unused)
+#'
+#' @import tensorflow
+#' @import tfdatasets
+#'
+#' @keywords internal
+encoderModel_add_logit_loss = function(logits, labels, weight=1.0, smoothing=0.0){
+   ## Add clossifier
+   with(tf$name_scope('loss_classifier'), {
+       logit_loss = tf$losses$softmax_cross_entropy(
+           tf$one_hot(labels, logits$get_shape()[-1]),
+           logits,
+           scope='loss_logit',
+           weights=weight,
+           label_smoothing=smoothing)
+       # self.add_average(logit_loss)
+       tf$summary$scalar('Loss_Logit', logit_loss)
+       logit_loss = tf$Print(logit_loss, list(logit_loss), message="class: ")
+   })
+}
+
+#' Guassian kernel
+#'
+#' Tensorflow implementation of tsne's gaussian_kernel, accepts tensors of
+#' float64 (for precision) and (should return float32)
+#'
+#' @return Tensorflow op
+#'
+#' @param data cell x feature data matrix
+#' @param data_b second cell x feature data matrix, if none provided then data_b = data
+#' @param dimen number of cells in of mini-batch
+#' @param perplexity neighborhood parameter for gaussian kernel
+#' @param method distance metric prior to computing probabilities
+#' @param diag indicator for self similarity
+#'
+#' @import tensorflow
+#' @import tfdatasets
+#'
+#' @keywords internal
+encoderModel_gaussian_kernel = function(data, data_b=NULL, dimen, perplexity=30, method="euclidean", diag="zero"){
+  with(tf$name_scope("gaussian_kernel"), {
+    if(is.null(data_b)){data_b = data}
+
+    ## Constants
+    PERPLEXITY_TOLERANCE = tf$constant(1e-5, dtype=tf$float64)
+    EPSILON_DBL = tf$constant(1e-8, dtype=tf$float64)
+    INFINITY    = tf$constant(1e10, dtype=tf$float64)
+    perplexity = tf$log(tf$constant(perplexity, dtype=tf$float64))
+
+    ## Variables used in binary search
+    betas      = tf$ones(shape(dimen), dtype=tf$float64, name="betas")
+    p_ij       = tf$ones(shape(dimen,dimen), dtype=tf$float64, name="p_ij")
+    p_ij_unnorm = tf$ones(shape(dimen,dimen), dtype=tf$float64, name="p_ij_unnorm")
+    beta_min   = tf$fill(dims=shape(dimen), value=tf$negative(INFINITY))
+    beta_max   = tf$fill(dims=shape(dimen), value=INFINITY)
+
+    ## distances
+    if(method == "euclidean"){
+      norm_a = tf$reshape(tf$reduce_sum(tf$square(data), as.integer(1)), shape(-1, 1))
+      norm_b = tf$reshape(tf$reduce_sum(tf$square(data_b), as.integer(1)), shape(1, -1))
+      affinities = norm_a - tf$constant(2, dtype=tf$float64)*tf$matmul(data, data_b, transpose_b=TRUE) + norm_b
+    }
+
+    ## While loop conditional
+    cond = function(step, affinities, perplexity, betas, beta_min, beta_max, p_ij, p_ij_unnorm){
+      return(tf$less_equal(step, tf$constant(100)))
+    }
+
+    ## While loop body
+    body = function(step, affinities, perplexity, betas, beta_min, beta_max, p_ij, p_ij_unnorm){
+      step = tf$add(step, tf$constant(1))
+      ## Compute probabilities
+      p_ij = tf$exp(tf$multiply(tf$negative(affinities), tf$reshape(betas, shape(-1,1))))
+      p_ij = tf$reshape(p_ij, shape(dimen, dimen)) ## tensorflow R requires this?
+      ## Reset exp(0)'s to 0
+      if(diag == "zero"){
+        p_ij = tf$matrix_set_diag(p_ij, tf$cast(tf$zeros(shape(dimen)), tf$float64))
+      }
+
+      sum_pij = tf$reduce_sum(p_ij, axis=as.integer(-1))
+      sum_pij = tf$where(tf$equal(sum_pij, tf$constant(0, dtype=tf$float64)), tf$fill(dims=shape(dimen), value=EPSILON_DBL), sum_pij)
+
+      p_ij_unnorm = p_ij
+      ## Normalize
+      p_ij = tf$divide(p_ij, tf$reshape(sum_pij, shape(-1,1)))
+
+      ## Precision based method
+      sum_disti_pij = tf$reduce_sum(tf$multiply(affinities, p_ij), axis=as.integer(-1))
+
+      ## Compute entropy
+      entropy = tf$add(tf$log(sum_pij), tf$multiply(betas, sum_disti_pij))
+      entropy_diff = tf$subtract(entropy, perplexity)
+
+      ## Logic for binary search: Lines 98-109 in tsne_util.pyx.
+      ## Set beta_min
+      beta_min = tf$where(tf$logical_and(tf$greater(entropy_diff, tf$constant(0.0, dtype=tf$float64)),
+                                         tf$greater(tf$abs(entropy_diff), PERPLEXITY_TOLERANCE)),
+                                         betas, beta_min)
+
+      ## Set betas for which entropy_diff > 0.0
+      ## Where = (cond, x, y): returns elements of x for which cond is true and y elements for which cond is False.
+      betas = tf$where(tf$logical_and(tf$greater(entropy_diff, tf$constant(0.0, dtype=tf$float64)),
+                                      tf$greater(tf$abs(entropy_diff), PERPLEXITY_TOLERANCE)),
+                                      tf$where(tf$equal(beta_max, INFINITY), tf$multiply(betas,2.0), tf$divide(tf$add(betas, beta_max), 2.0)), betas)
+
+      ## Set beta_max
+      beta_max = tf$where(tf$logical_and(tf$less_equal(entropy_diff, tf$constant(0.0, dtype=tf$float64)),
+                                         tf$greater(tf$abs(entropy_diff), PERPLEXITY_TOLERANCE)),
+                                         betas, beta_max)
+
+      ##Set betas for which entropy_diff <= 0.0
+      betas = tf$where(tf$logical_and(tf$less_equal(entropy_diff, tf$constant(0.0, dtype=tf$float64)),
+                                      tf$greater(tf$abs(entropy_diff), PERPLEXITY_TOLERANCE)),
+                                      tf$where(tf$equal(beta_min, tf$negative(INFINITY)), tf$divide(betas,2.0), tf$divide(tf$add(betas, beta_min), 2.0)), betas)
+
+      ## Control dependencies before looping can continue
+      with(tf$control_dependencies(list(step, affinities, perplexity, betas, beta_min)), {
+        return(list(step, affinities, perplexity, betas, beta_min, beta_max, p_ij, p_ij_unnorm))
+      })
+    }
+
+    ## Run binary search for bandwidth (precision)
+    step = tf$constant(0)
+    loop = tf$while_loop(cond, body, list(step, affinities, perplexity, betas, beta_min, beta_max, p_ij, p_ij_unnorm), back_prop=FALSE)
+    return(loop[[7]])
+  })
+}
+
+#' Compute embedding for mini-batch
+#'
+#' Takes the high dimensional data through the neural network to embedding layer
+#'
+#' @return Tensorflow op
+#'
+#' @param model_func Network op in graph
+#' @param data Data to pass through model_func
+#' @param is_training Determines whether dropout and batch norm are run.
+#'
+#' @import tensorflow
+#' @import tfdatasets
+#'
+#' @keywords internal
+encoderModel_data_to_embedding = function(model_func, data, is_training=TRUE){
+  ## Create a graph, transforming data into embeddings
+  with(tf$name_scope('data_to_emb_net'), {
+    with(tf$variable_scope('net', reuse=is_training), {
+      return(model_func(data, is_training=is_training))
+    })
+  })
+}
+
+#' Convert embedding to logit scores
+#'
+#' @return Tensorflow op
+#'
+#' @param data Data to pass through model_func.
+#' @param num_labels How many unique labels there are.
+#' @param is_training Determines whether dropout and batch norm are run.
+#'
+#' @import tensorflow
+#' @import tfdatasets
+#'
+#' @keywords internal
+encoderModel_embedding_to_logit = function(data, num_labels, is_training=TRUE){
+  ## Add to computation graph, transform embeddings into logit scores
+  with(tf$name_scope('emb_to_logit_net'), {
+    with(tf$variable_scope('net', reuse=is_training), {
+      return(tf$layers$dense(inputs=data,
+                             units=num_labels,
+                             activation=NULL,
+                             kernel_regularizer=tf$contrib$layers$l2_regularizer(1e-4),
+                             use_bias=TRUE,
+                             name='logit_fc'))
+    })
+  })
+}
+
+#' Compute embedding for complete data after training
+#'
+#' Takes the high dimensional data through the neural network to embedding layer
+#'
+#' @return Aligned data embedding
+#'
+#' @param sess Current tensorflow session
+#' @param data Input matrix or tensor to reduce to embedding space
+#' @param endpoint Operation to evaluate in the graph
+#' @param test_in Placeholder to process full data in batches
+#' @param batch_size how many cells per each batch
+#' @param FLAGS Tensorflow run arguments
+#'
+#' @import tensorflow
+#' @import tfdatasets
+#'
+#' @keywords internal
+encoderModel_calc_embedding = function(sess, data, endpoint, test_in, FLAGS, batch_size=150){
+  emb = matrix(nrow=nrow(data), ncol=FLAGS$emb_size, 0)
+  for(i in seq(1,nrow(data),batch_size)){
+    ix_end = min((i+(batch_size-1)), nrow(data))
+    emb[i:ix_end,] = sess$run(endpoint, dict(test_in=data[i:ix_end,]))
+  }
+  return(emb)
+}
+
+# ## Compute logit scores
+# def classify(self, data):
+#   return self.calc_embedding(data, self.test_logit)
+
+#' Builds training operation
+#'
+#' Defines how the model is optimized and update scheme.
+#'
+#' @param learning_rate Learning rate for optimizer
+#' @param step Global training step
+#'
+#' @return Tensorflow training op
+#'
+#' @import tensorflow
+#' @import tfdatasets
+#'
+#' @keywords internal
+encoderModel_create_train_op = function(learning_rate, step){
+  ## Collect all loss components
+  train_loss    = tf$losses$get_total_loss()
+  ## Minimize loss function
+  optimizer = tf$train$AdamOptimizer(learning_rate)
+  train_op = optimizer$minimize(train_loss, step)
+  ## Monitor
+  tf$summary$scalar('Learning_Rate', learning_rate)
+  tf$summary$scalar('Loss_Total', train_loss)
+  return(train_op)
+}

@@ -4,7 +4,7 @@
 \alias{.data_setup}
 \title{Sets data}
 \usage{
-.data_setup(object, data.use)
+.data_setup(sce.object, data.use)
 }
 \value{
 Extracted data

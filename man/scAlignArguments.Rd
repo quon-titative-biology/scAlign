@@ -4,7 +4,7 @@
 \alias{scAlignArguments}
 \title{Record aguments passed to scAlign}
 \usage{
-scAlignArguments(object, encoder.data, decoder.data, supervised,
+scAlignArguments(sce.object, encoder.data, decoder.data, supervised,
   run.encoder, run.decoder, log.dir, log.results, device)
 }
 \value{

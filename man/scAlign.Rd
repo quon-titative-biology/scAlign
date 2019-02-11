@@ -4,13 +4,13 @@
 \alias{scAlign}
 \title{Run scAlign framework}
 \usage{
-scAlign(object, options = scAlignOptions(),
+scAlign(sce.object, options = scAlignOptions(),
   encoder.data = "scale.data", decoder.data = encoder.data,
   supervised = "none", run.encoder = TRUE, run.decoder = TRUE,
   log.dir = "./models/", log.results = FALSE, device = "CPU")
 }
 \arguments{
-\item{object}{scAlign object.}
+\item{sce.object}{scAlign object.}
 
 \item{options}{Training options for scAlign.}
 
@@ -39,6 +39,7 @@ Main function for scAlign that runs encoder and decoder networks
 \examples{
 
 library(Seurat)
+library(SingleCellExperiment)
 
 ## Input data, 1000 genes x 100 cells
 data = matrix(sample.int(10000, 1000*100, TRUE), 1000, 100)
@@ -54,30 +55,45 @@ stim.data = data[,which(age == "old")]
 ctrl = CreateSeuratObject(raw.data = ctrl.data, project = "MOUSE_AGE", min.cells = 0)
 ctrl@meta.data$stim  = "YOUNG"
 ctrl@meta.data$label = labels[which(age == "young")]
-ctrl = ScaleData(ctrl, do.scale=FALSE, do.center=FALSE, scale.max=50, display.progress = TRUE)
+ctrl = ScaleData(ctrl, do.scale=TRUE, do.center=TRUE, scale.max=50, display.progress = TRUE)
 
 stim = CreateSeuratObject(raw.data = stim.data, project = "MOUSE_AGE", min.cells = 0)
 stim@meta.data$stim = "OLD"
 stim@meta.data$label = labels[which(age == "old")]
-stim = ScaleData(stim, do.scale=FALSE, do.center=FALSE, scale.max=50, display.progress = TRUE)
+stim = ScaleData(stim, do.scale=TRUE, do.center=TRUE, scale.max=50, display.progress = TRUE)
+
+## Build the SCE object for input to scAlign using Seurat preprocessing and variable gene selection
+ctrl.sce <- SingleCellExperiment(
+              assays = list(
+                counts = ctrl@raw.data,
+                scale.data = ctrl@scale.data),
+              colData = ctrl@meta.data)
+
+stim.sce <- SingleCellExperiment(
+              assays = list(
+                counts = stim@raw.data,
+                scale.data = stim@scale.data),
+              colData = stim@meta.data)
 
 ## Build the scAlign class object and compute PCs
-scAlignHSC = scAlignCreateObject(objects = list("YOUNG"=ctrl, "OLD"=stim),
-                                 labels = list(ctrl@meta.data$label, stim@meta.data$label),
-                                 pca.reduce = FALSE,
+scAlignHSC = scAlignCreateObject(sce.objects = list("YOUNG"=ctrl.sce,
+                                                    "OLD"=stim.sce),
+                                 labels = list(ctrl.sce@colData@listData$label,
+                                               stim.sce@colData@listData$label),
+                                 pca.reduce = TRUE,
                                  pcs.compute = 50,
-                                 cca.reduce = FALSE,
+                                 cca.reduce = TRUE,
                                  ccs.compute = 15,
-                                 project.name = "scAlign_example")
+                                 project.name = "scAlign_Kowalcyzk_HSC")
 
 ## Run scAlign with high_var_genes
 scAlignHSC = scAlign(scAlignHSC,
-                     options=scAlignOptions(steps=1, log.every=1, early.stop=FALSE, architecture="large"),
-                     encoder.data="scale.data",
-                     supervised='none',
-                     run.encoder=TRUE,
-                     run.decoder=FALSE,
-                     log.results=FALSE,
-                     device="CPU")
+                    options=scAlignOptions(steps=1, log.every=1, early.stop=TRUE, architecture="large"),
+                    encoder.data="scale.data",
+                    supervised='none',
+                    run.encoder=TRUE,
+                    run.decoder=TRUE,
+                    log.results=FALSE,
+                    device="CPU")
 
 }

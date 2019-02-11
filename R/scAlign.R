@@ -5,7 +5,7 @@
 #'
 #' @return scAlign class
 #'
-#' @param object scAlign object.
+#' @param sce.object scAlign object.
 #' @param options Training options for scAlign.
 #' @param encoder.data Which data format to use for alignment.
 #' @param decoder.data Which data format to use for interpolation.
@@ -19,6 +19,7 @@
 #' @examples
 #'
 #' library(Seurat)
+#' library(SingleCellExperiment)
 #'
 #' ## Input data, 1000 genes x 100 cells
 #' data = matrix(sample.int(10000, 1000*100, TRUE), 1000, 100)
@@ -34,37 +35,53 @@
 #' ctrl = CreateSeuratObject(raw.data = ctrl.data, project = "MOUSE_AGE", min.cells = 0)
 #' ctrl@meta.data$stim  = "YOUNG"
 #' ctrl@meta.data$label = labels[which(age == "young")]
-#' ctrl = ScaleData(ctrl, do.scale=FALSE, do.center=FALSE, scale.max=50, display.progress = TRUE)
+#' ctrl = ScaleData(ctrl, do.scale=TRUE, do.center=TRUE, scale.max=50, display.progress = TRUE)
 #'
 #' stim = CreateSeuratObject(raw.data = stim.data, project = "MOUSE_AGE", min.cells = 0)
 #' stim@meta.data$stim = "OLD"
 #' stim@meta.data$label = labels[which(age == "old")]
-#' stim = ScaleData(stim, do.scale=FALSE, do.center=FALSE, scale.max=50, display.progress = TRUE)
+#' stim = ScaleData(stim, do.scale=TRUE, do.center=TRUE, scale.max=50, display.progress = TRUE)
+#'
+#' ## Build the SCE object for input to scAlign using Seurat preprocessing and variable gene selection
+#' ctrl.sce <- SingleCellExperiment(
+#'               assays = list(
+#'                 counts = ctrl@raw.data,
+#'                 scale.data = ctrl@scale.data),
+#'               colData = ctrl@meta.data)
+#'
+#' stim.sce <- SingleCellExperiment(
+#'               assays = list(
+#'                 counts = stim@raw.data,
+#'                 scale.data = stim@scale.data),
+#'               colData = stim@meta.data)
 #'
 #' ## Build the scAlign class object and compute PCs
-#' scAlignHSC = scAlignCreateObject(objects = list("YOUNG"=ctrl, "OLD"=stim),
-#'                                  labels = list(ctrl@meta.data$label, stim@meta.data$label),
-#'                                  pca.reduce = FALSE,
+#' scAlignHSC = scAlignCreateObject(sce.objects = list("YOUNG"=ctrl.sce,
+#'                                                     "OLD"=stim.sce),
+#'                                  labels = list(ctrl.sce@colData@listData$label,
+#'                                                stim.sce@colData@listData$label),
+#'                                  pca.reduce = TRUE,
 #'                                  pcs.compute = 50,
-#'                                  cca.reduce = FALSE,
+#'                                  cca.reduce = TRUE,
 #'                                  ccs.compute = 15,
-#'                                  project.name = "scAlign_example")
+#'                                  project.name = "scAlign_Kowalcyzk_HSC")
 #'
 #' ## Run scAlign with high_var_genes
 #' scAlignHSC = scAlign(scAlignHSC,
-#'                      options=scAlignOptions(steps=1, log.every=1, early.stop=FALSE, architecture="large"),
-#'                      encoder.data="scale.data",
-#'                      supervised='none',
-#'                      run.encoder=TRUE,
-#'                      run.decoder=FALSE,
-#'                      log.results=FALSE,
-#'                      device="CPU")
+#'                     options=scAlignOptions(steps=1, log.every=1, early.stop=TRUE, architecture="large"),
+#'                     encoder.data="scale.data",
+#'                     supervised='none',
+#'                     run.encoder=TRUE,
+#'                     run.decoder=TRUE,
+#'                     log.results=FALSE,
+#'                     device="CPU")
 #'
+#' @import SingleCellExperiment
 #' @import tensorflow
 #' @import methods
 #'
 #' @export
-scAlign = function(object,
+scAlign = function(sce.object,
                    options = scAlignOptions(),
                    encoder.data="scale.data",
                    decoder.data=encoder.data,
@@ -82,55 +99,66 @@ scAlign = function(object,
     .check_tensorflow()
 
     ## Set options to class object
-    object = setOptions(object, options)
+    sce.object@metadata$options = options;
 
     ## Record arguments passed to this function
-    object = scAlignArguments(object, encoder.data, decoder.data, supervised, run.encoder, run.decoder, log.dir, log.results, device)
+    sce.object@metadata$arguments = scAlignArguments(sce.object,
+                                                          encoder.data,
+                                                          decoder.data,
+                                                          supervised,
+                                                          run.encoder,
+                                                          run.decoder,
+                                                          log.dir,
+                                                          log.results,
+                                                          device)
 
     ## Indepth argument sanity checking
-    .check_all_args(object)
+    .check_all_args(sce.object)
 
-    encoder_data = .data_setup(object, encoder.data)
+    encoder_data = .data_setup(sce.object, encoder.data)
     object1 = encoder_data[[1]]; object2 = encoder_data[[2]];
     object1.name = encoder_data[[3]]; object2.name=encoder_data[[4]];
     data.use = encoder_data[[5]];
+
+    options   = sce.object@metadata$options
+    arguments = sce.object@metadata$arguments
 
     ## Set flags for all aspects of tensorflow training (encoder/decoder)
     FLAGS <- tensorflow::flags(
       ## Reporting/Verbosity ##
       tensorflow::flag_boolean('plot', TRUE, 'Investigate model usages'),
       tensorflow::flag_boolean('verbose', TRUE, 'Enable verbose runtime information'),
-      tensorflow::flag_boolean('log.results', object@arguments$log.results, 'Save summary and graph information to log.dir'),
+      tensorflow::flag_boolean('log.results', arguments$log.results, 'Save summary and graph information to log.dir'),
       tensorflow::flag_boolean('stack_trace', FALSE, 'Investigate model usages'),
       ## Saving ##
-      tensorflow::flag_string('logdir', object@arguments$log.dir, 'Training log path.'),
-      tensorflow::flag_integer('log_every_n_steps', object@options$log.every, 'Logging interval for training loop.'),
+      tensorflow::flag_string('logdir', arguments$log.dir, 'Training log path.'),
+      tensorflow::flag_integer('log_every_n_steps', options$log.every, 'Logging interval for training loop.'),
       tensorflow::flag_integer('max_checkpoints', 25, 'Maximum number of recent checkpoints to keep.'),
       tensorflow::flag_numeric('keep_checkpoint_every_n_hours', 5.0, 'How often checkpoints should be kept.'),
       tensorflow::flag_integer('save_summaries_secs', 300, 'How often should summaries be saved (in seconds).'),
       tensorflow::flag_integer('save_interval_secs', 600, 'How often should checkpoints be saved (in seconds).'),
       ## Early stopping ##
-      tensorflow::flag_boolean('early_stopping', object@options$early.stop, 'Performing early stopping based on total loss value.'),
+      tensorflow::flag_boolean('early_stopping', options$early.stop, 'Performing early stopping based on total loss value.'),
       ## Multi-GPU (currently unused) ##
       tensorflow::flag_string('master', '',  'BNS name of the TensorFlow master to use.'),
       tensorflow::flag_integer('ps_tasks', 0, 'The number of parameter servers. If the value is 0, then the parameters are handled locally by the worker.'),
       tensorflow::flag_integer('task', 0, 'The Task ID. This value is used when training with multiple workers to identify each worker.'),
       ## Encoder architecture ##
-      tensorflow::flag_string('encoder', object@options$architecture, 'Which network architecture from architectures.py to use.'),
-      tensorflow::flag_integer('emb_size', object@options$num.dim, 'Size of the embeddings to learn.'),
+      tensorflow::flag_string('encoder', options$architecture, 'Which network architecture from architectures.py to use.'),
+      tensorflow::flag_integer('emb_size', options$num.dim, 'Size of the embeddings to learn.'),
       tensorflow::flag_boolean('batch_norm', TRUE, 'To include batch_norm layers in model'),
       tensorflow::flag_numeric('batch_norm_decay', 0.99, 'Batch norm decay factor (unused at the moment'),
       ## Decoder architecture ##
-      tensorflow::flag_string('decoder', object@options$architecture, 'Which network architecture from architectures.py to use for decoder network.'),
+      tensorflow::flag_string('decoder', options$architecture, 'Which network architecture from architectures.py to use for decoder network.'),
       ## Training ##
-      tensorflow::flag_integer('unsup_batch_size', object@options$batch.size, 'Number of unlabeled samples per batch.'),
-      tensorflow::flag_numeric('learning_rate', object@options$learning.rate, 'Initial learning rate.'),
+      tensorflow::flag_integer('unsup_batch_size', options$batch.size, 'Number of unlabeled samples per batch.'),
+      tensorflow::flag_numeric('learning_rate', options$learning.rate, 'Initial learning rate.'),
       tensorflow::flag_numeric('minimum_learning_rate', 1e-8, 'Lower bound for learning rate.'),
       tensorflow::flag_numeric('decay_factor', 0.33, 'Learning rate decay factor.'),
-      tensorflow::flag_numeric('decay_steps', floor((3/5)*object@options$steps), 'Learning rate decay interval in steps.'),
-      tensorflow::flag_integer('max_steps', object@options$steps, 'Number of training steps.'),
-      tensorflow::flag_integer('max_steps_decoder', object@options$steps, 'Number of training steps.'),
-      tensorflow::flag_integer('random_seed', object@options$seed, 'Integer random seed used for labeled set selection.'),
+      tensorflow::flag_numeric('decay_steps', floor((3/5)*options$steps), 'Learning rate decay interval in steps.'),
+      tensorflow::flag_integer('max_steps', options$steps, 'Number of training steps.'),
+      tensorflow::flag_integer('max_steps_decoder', options$steps, 'Number of training steps.'),
+      tensorflow::flag_integer('random_seed', options$seed, 'Integer random seed used for labeled set selection.'),
       ## Loss function: walker loss for object1 ##
       tensorflow::flag_numeric('walker_weight', 1.0, 'Weight for walker loss.'),
       tensorflow::flag_string('walker_weight_envelope', 'None', 'Increase walker weight with an envelope: [None, sigmoid, linear]'),
@@ -143,7 +171,7 @@ scAlign = function(object,
       tensorflow::flag_integer('target_walker_weight_envelope_steps', 1, 'Number of steps (after delay) at which envelope saturates. -1 = follow walker loss env.'),
       tensorflow::flag_integer('target_walker_weight_envelope_delay', 1, 'Number of steps at which envelope starts. -1 = follow walker loss env.'),
       ## Loss function: classifier ##
-      tensorflow::flag_string('supervised', object@arguments$supervised, 'What type of classifier to run during training'),
+      tensorflow::flag_string('supervised', arguments$supervised, 'What type of classifier to run during training'),
       tensorflow::flag_numeric('logit_weight', 1.0, 'Weight for logit loss.'),
       ## Loss function: visit (currently unused) ##
       tensorflow::flag_numeric('visit_weight', 0.0, 'Weight for visit loss.'),
@@ -154,12 +182,12 @@ scAlign = function(object,
       tensorflow::flag_string('kernel', 'tsne', 'Which kernel method tsne or original T (uniform),?'),
       tensorflow::flag_string('prob_comp', 'exp',  'How to compute p_ab, p_ba: non_exp (expless softmax), or softmax'),
       tensorflow::flag_string('self_sim', 'zero', 'To use self similarity in loss function, p_aba and T diagonal zero?'),
-      tensorflow::flag_numeric('perplexity', object@options$perplexity, 'parameter used to control number of neighbors when computing T_ij'),
+      tensorflow::flag_numeric('perplexity', options$perplexity, 'parameter used to control number of neighbors when computing T_ij'),
       tensorflow::flag_string('tsne_metric', 'euclidean', 'The metric to use when calculating distance between instances in a feature array.'),
       tensorflow::flag_string('tsne_method', 'exact', 'exact or approximately compute p_ij'),
       tensorflow::flag_string('tsne_init', 'random', 'If int, random_state is the seed used by the random number generator'),
       ## Data options ##
-      tensorflow::flag_boolean('norm', object@options$norm, 'Perform L2 normalization prior to training.'),
+      tensorflow::flag_boolean('norm', options$norm, 'Perform L2 normalization prior to training.'),
       ## Testing options ##
       tensorflow::flag_integer('mini_batch', 50, 'Number samples per testing batch.'),
       ## Hardware ##
@@ -178,8 +206,9 @@ scAlign = function(object,
     if(FLAGS$log.results == TRUE){
       dir.create(file.path(FLAGS$logdir, '/model_full'), showWarnings = FALSE)
       dir.create(file.path(FLAGS$logdir, '/model_full/plots'), showWarnings = FALSE)
-      for(itr in seq_len(length(object@scale.data))){
-          dir.create(file.path(FLAGS$logdir, paste0(names(object@scale.data)[itr], '_decoder')), showWarnings = FALSE)
+      for(itr in seq_len(length(unique(sce.object@colData@listData[["group.by"]])))){
+          dir.create(file.path(FLAGS$logdir, paste0(unique(sce.object@colData@listData[["group.by"]])[itr], '_decoder')),
+                     showWarnings = FALSE)
       }
       ## Write out all run options for reproducability
       write.table(as.data.frame(FLAGS), file=file.path(FLAGS$logdir, 'model_full/run_flags.txt'), sep="\t", row.names=FALSE, col.names=TRUE)
@@ -190,13 +219,12 @@ scAlign = function(object,
     trg_mode = ifelse(is.element(FLAGS$supervised, c(object2.name, "both")), "supervised", "unsupervised")
 
     ## Determine data shape and label space once
-    num_labels = max(length(unique(object@meta.data$labels))) ## determines number of logits for classifier
+    num_labels = length(unique(sce.object@colData@listData$scAlign.labels)) ## determines number of logits for classifier
     data_shape = ncol(object1) ## source and target should have same shape
 
     ############################################################################
     ## Run scAlign
     ############################################################################
-
     tryCatch({
       ## Domain Adaptation
       if(run.encoder == TRUE){
@@ -204,14 +232,16 @@ scAlign = function(object,
         aligned_data = encoderModel_train_encoder(FLAGS, 'alignment', config,
                                                   num_labels, data_shape,
                                                   object1.name, object2.name,
-                                                  object1, as.integer(as.factor(object@meta.data$labels[which(object@meta.data$group == object1.name)])),
-                                                  object2, as.integer(as.factor(object@meta.data$labels[which(object@meta.data$group == object2.name)])))
-        object = setAligned(object, aligned_data, data.use)
+                                                  object1, as.integer(
+                                                             as.factor(sce.object@colData@listData$scAlign.labels[object1.name == sce.object@colData@listData[["group.by"]]])),
+                                                  object2, as.integer(
+                                                             as.factor(sce.object@colData@listData$scAlign.labels[object2.name == sce.object@colData@listData[["group.by"]]])))
+        reducedDim(sce.object, paste0("ALIGNED-", data.use)) = aligned_data
       }
     }, error=function(e){
       print("Error during alignment, returning scAlign class.")
       print(e)
-      return(object)
+      return(sce.object)
     })
 
     tryCatch({
@@ -220,7 +250,7 @@ scAlign = function(object,
 
         ## Try to load aligned data
         if(run.encoder == TRUE){
-          emb_dataset = object@aligned.data[[data.use]]@embedding
+          emb_dataset = sce.object@reducedDims[[paste0("ALIGNED-", data.use)]]
         }else{
           emb_dataset = tryCatch({
               as.matrix(read.csv(paste0(FLAGS$logdir, '/model_alignment/train/emb_activations_', FLAGS$max_steps, '.csv'), header=FALSE, stringsAsFactors=FALSE))
@@ -229,11 +259,11 @@ scAlign = function(object,
           })
         }
 
-        data_embed_source = object@aligned.data[[data.use]]@embedding[seq_len(nrow(object1)),]
-        data_embed_target = object@aligned.data[[data.use]]@embedding[(nrow(object1)+1):(nrow(object1)+nrow(object2)),]
+        data_embed_source = emb_dataset[seq_len(nrow(object1)),]
+        data_embed_target = emb_dataset[(nrow(object1)+1):(nrow(object1)+nrow(object2)),]
 
         ## Get decoder data
-        decoder_data = .data_setup(object, decoder.data)
+        decoder_data = .data_setup(sce.object, decoder.data)
         object1 = decoder_data[[1]]; object2 = decoder_data[[2]];
         object1.name = decoder_data[[3]]; object2.name = decoder_data[[4]];
         data.use = decoder_data[[5]];
@@ -244,20 +274,20 @@ scAlign = function(object,
                                                        object1,
                                                        data_embed_source, emb_dataset)
 
-        object = setProjected(object, projected, data.use, paste0(object1.name, "2", object2.name))
+        reducedDim(sce.object, paste0(object1.name, "2", object2.name)) = projected
 
         print(paste0("============== Step 3/3: ", object2.name ," decoder training ==============="))
         projected = decoderModel_train_decoder(FLAGS, config, object2.name,
                                                        object2,
                                                        data_embed_target, emb_dataset)
 
-        object = setProjected(object, projected, data.use, paste0(object2.name, "2", object1.name))
+        reducedDim(sce.object, paste0(object2.name, "2", object1.name)) = projected
       }
     }, error=function(e){
       print("Error during interpolation, returning scAlign class.")
       print(e)
-      return(object)
+      return(sce.object)
     })
 
-    return(object) ## Return Class
+    return(sce.object) ## Return Class
 }

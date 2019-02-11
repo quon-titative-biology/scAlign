@@ -4,7 +4,7 @@
 \alias{.check_all_args}
 \title{Check arguments}
 \usage{
-.check_all_args(object)
+.check_all_args(sce.object)
 }
 \value{
 Nothing

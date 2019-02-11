@@ -18,6 +18,7 @@
 #' @examples
 #'
 #' library(Seurat)
+#' library(SingleCellExperiment)
 #'
 #' ## Input data, 1000 genes x 100 cells
 #' data = matrix(sample.int(10000, 1000*100, TRUE), 1000, 100)
@@ -33,40 +34,59 @@
 #' ctrl = CreateSeuratObject(raw.data = ctrl.data, project = "MOUSE_AGE", min.cells = 0)
 #' ctrl@meta.data$stim  = "YOUNG"
 #' ctrl@meta.data$label = labels[which(age == "young")]
-#' ctrl = ScaleData(ctrl, do.scale=FALSE, do.center=FALSE, scale.max=50, display.progress = TRUE)
+#' ctrl = ScaleData(ctrl, do.scale=TRUE, do.center=TRUE, scale.max=50, display.progress = TRUE)
 #'
 #' stim = CreateSeuratObject(raw.data = stim.data, project = "MOUSE_AGE", min.cells = 0)
 #' stim@meta.data$stim = "OLD"
 #' stim@meta.data$label = labels[which(age == "old")]
-#' stim = ScaleData(stim, do.scale=FALSE, do.center=FALSE, scale.max=50, display.progress = TRUE)
+#' stim = ScaleData(stim, do.scale=TRUE, do.center=TRUE, scale.max=50, display.progress = TRUE)
+#'
+#' ## Build the SCE object for input to scAlign using Seurat preprocessing and variable gene selection
+#' ctrl.sce <- SingleCellExperiment(
+#'               assays = list(
+#'                 counts = ctrl@raw.data,
+#'                 scale.data = ctrl@scale.data),
+#'               colData = ctrl@meta.data)
+#'
+#' stim.sce <- SingleCellExperiment(
+#'               assays = list(
+#'                 counts = stim@raw.data,
+#'                 scale.data = stim@scale.data),
+#'               colData = stim@meta.data)
 #'
 #' ## Build the scAlign class object and compute PCs
-#' scAlignHSC = scAlignCreateObject(objects = list("YOUNG"=ctrl, "OLD"=stim),
-#'                                  labels = list(ctrl@meta.data$label, stim@meta.data$label),
-#'                                  pca.reduce = FALSE,
+#' scAlignHSC = scAlignCreateObject(sce.objects = list("YOUNG"=ctrl.sce,
+#'                                                     "OLD"=stim.sce),
+#'                                  labels = list(ctrl.sce@colData@listData$label,
+#'                                                stim.sce@colData@listData$label),
+#'                                  pca.reduce = TRUE,
 #'                                  pcs.compute = 50,
-#'                                  cca.reduce = FALSE,
+#'                                  cca.reduce = TRUE,
 #'                                  ccs.compute = 15,
-#'                                  project.name = "scAlign_example")
+#'                                  project.name = "scAlign_Kowalcyzk_HSC")
 #'
 #' ## Run scAlign with high_var_genes
 #' scAlignHSC = scAlign(scAlignHSC,
-#'                      options=scAlignOptions(steps=1, log.every=1, early.stop=FALSE, architecture="large"),
-#'                      encoder.data="scale.data",
-#'                      supervised='none',
-#'                      run.encoder=TRUE,
-#'                      run.decoder=FALSE,
-#'                      log.results=FALSE,
-#'                      device="CPU")
+#'                     options=scAlignOptions(steps=1, log.every=1, early.stop=FALSE, architecture="large"),
+#'                     encoder.data="scale.data",
+#'                     supervised='none',
+#'                     run.encoder=TRUE,
+#'                     run.decoder=TRUE,
+#'                     log.results=FALSE,
+#'                     device="CPU")
 #'
 #' ## Plot alignment for 3 input types
-#' example_plot = PlotTSNE(scAlignHSC, "GENE", "labels", title="scAlign-Gene", perplexity=30)
+#' example_plot = PlotTSNE(scAlignHSC, "ALIGNED-GENE", "labels", title="scAlign-Gene", perplexity=30)
 #'
 #' @export
 PlotTSNE = function(object, data.use, labels.use, cols=NULL, title="", legend="none", seed=1234, ...){
     x=y=NULL ## Appease R checker, doesn't like ggplot2 aes() variables
-    res = Rtsne(object@aligned.data[[data.use]]@embedding, ...)
-    labels = object@meta.data[,labels.use]
+    res = Rtsne(object@reducedDims[[data.use]], ...)
+    if(labels.use == "labels"){
+      labels = object@colData@listData[["scAlign.labels"]]
+    }else{
+      labels = object@colData@listData[["group.by"]]
+    }
     plot.me <- data.frame(x=res$Y[,1], y=res$Y[,2], labels=labels, stringsAsFactors=FALSE)
     tsne.plot <- ggplot(plot.me, aes(x=x, y=y, colour = labels))
     if(!is.null(cols)){ tsne.plot <- tsne.plot + scale_colour_manual(values=cols) }
@@ -145,51 +165,54 @@ PlotTSNE = function(object, data.use, labels.use, cols=NULL, title="", legend="n
 #' @return Nothing
 #'
 #' @keywords internal
-.check_all_args = function(object){
+.check_all_args = function(sce.object){
+
+  arguments = sce.object@metadata[["arguments"]]
+  options   = sce.object@metadata[["options"]]
 
   ## Parameter check
-  if (!is.character(object@arguments[,"supervised"]) || !is.element(object@arguments[,"supervised"], c("none", names(object@scale.data), "both"))) { stop("supervised should be \"none\", \"[object.name(s)]\" or \"both\".") }
-  if (!is.character(object@arguments[,"device"])) { stop("device should be a string.") }
-  if (!.is.wholenumber(object@options[,"batch.size"])) { stop("batch.size should be an integer.") }
-  if (!.is.wholenumber(object@options[,"perplexity"])) { stop("perplexity should be an integer.") }
-  if (!is.numeric(object@options[,"learning.rate"]) || as.numeric(object@options[,"learning.rate"])<=0.0) { stop("Incorrect learning.rate scale.") }
-  if (!(is.logical(object@options[,"norm"]))) { stop("norm should be TRUE or FALSE.") }
-  if (!(is.logical(object@arguments[,"run.encoder"]))) { stop("run.encoder should be TRUE or FALSE") }
-  if (!(is.logical(object@arguments[,"run.decoder"]))) { stop("run.decoder should be TRUE or FALSE") }
+  if (!is.character(arguments[,"supervised"]) || !is.element(arguments[,"supervised"], c("none", names(sce.object@assays), "both"))) { stop("supervised should be \"none\", \"[object.name(s)]\" or \"both\".") }
+  if (!is.character(arguments[,"device"])) { stop("device should be a string.") }
+  if (!.is.wholenumber(options[,"batch.size"])) { stop("batch.size should be an integer.") }
+  if (!.is.wholenumber(options[,"perplexity"])) { stop("perplexity should be an integer.") }
+  if (!is.numeric(options[,"learning.rate"]) || as.numeric(options[,"learning.rate"])<=0.0) { stop("Incorrect learning.rate scale.") }
+  if (!(is.logical(options[,"norm"]))) { stop("norm should be TRUE or FALSE.") }
+  if (!(is.logical(arguments[,"run.encoder"]))) { stop("run.encoder should be TRUE or FALSE") }
+  if (!(is.logical(arguments[,"run.decoder"]))) { stop("run.decoder should be TRUE or FALSE") }
 
   ## Ensure results directories can be created
   tryCatch({
-    dir.create(file.path(object@arguments[,"log.dir"]), recursive=TRUE, showWarnings = TRUE)
+    dir.create(file.path(arguments[,"log.dir"]), recursive=TRUE, showWarnings = TRUE)
   }, warning=function(w){
 
   }, error=function(e){
     stop("Invalid path for log.dir")
   })
 
-  if(object@options[,"batch.size"] <= 0){
+  if(options[,"batch.size"] <= 0){
     stop("Incorrect minibatch_size, must not be greater than combined number of samples or less than 1.")
   }
 
-  if(object@options[,"steps"] < 1000){
+  if(options[,"steps"] < 1000){
     print("Training steps should be at least 1000.")
   }
 
-  if(object@options[,"log.every"] > object@options[,"steps"]){
+  if(options[,"log.every"] > options[,"steps"]){
     stop("log_results_every_n_steps should not be larger than training_steps.")
   }
 
-  if(object@options[,"num.dim"] <= 0){
+  if(options[,"num.dim"] <= 0){
     stop("Embedding_size should be greater than 0.")
   }
 
   tryCatch({
-      match.fun(paste0("encoder_", object@options$architecture))
+      match.fun(paste0("encoder_", options$architecture))
   }, error=function(e) {
       stop("architecture_encoder does not exist in architectures.R")
   })
 
   tryCatch({
-      match.fun(paste0("decoder_", object@options$architecture))
+      match.fun(paste0("decoder_", options$architecture))
   }, error=function(e) {
       stop("architecture_decoder does not exist in architectures.R")
   })
@@ -253,29 +276,25 @@ PlotTSNE = function(object, data.use, labels.use, cols=NULL, title="", legend="n
 #' @return Extracted data
 #'
 #' @keywords internal
-.data_setup = function(object, data.use){
+.data_setup = function(sce.object, data.use){
+  ## Get dataset names
+  object1.name = unique(sce.object@colData@listData[["group.by"]])[1]
+  object2.name = unique(sce.object@colData@listData[["group.by"]])[2]
+  ## Get indices of two datasets (using overloaded ==)
+  object1.idx = object1.name == sce.object@colData@listData[["group.by"]]
+  object2.idx = object2.name == sce.object@colData@listData[["group.by"]]
   ## Set the data for current alignment
-  if(is.element(data.use, c("raw.data", "scale.data", names(object@reduced.data)))){
-    if(data.use == "raw.data"){
-      ## placeholders, works for now (data) until work on multi alignment
-      object1 = t(object@raw.data[[1]]); object1.name = names(object@raw.data)[1]
-      object2 = t(object@raw.data[[2]]); object2.name = names(object@raw.data)[2]
-      data.use = "GENE"
-    } else if(data.use == "scale.data"){
-      ## placeholders, works for now (data) until work on multi alignment
-      object1 = t(object@scale.data[[1]]); object1.name = names(object@scale.data)[1]
-      object2 = t(object@scale.data[[2]]); object2.name = names(object@scale.data)[2]
-      data.use = "GENE"
-    } else{
-      ## Extract object1 data
-      object1.name = names(object@scale.data)[1]
-      object1 = object@reduced.data[[data.use]]@embedding[which(object@meta.data$group == object1.name),];
-      ## Extract object2 data
-      object2.name = names(object@scale.data)[2]
-      object2 = object@reduced.data[[data.use]]@embedding[which(object@meta.data$group == object2.name),];
-    }
+  if(is.element(data.use, names(sce.object@assays))){
+    ## placeholders, works for now (data) until work on multi alignment
+    object1 = t(sce.object@assays[[data.use]][,object1.idx]);
+    object2 = t(sce.object@assays[[data.use]][,object2.idx]);
+    data.use = "GENE"
+  }else if(is.element(data.use, names(sce.object@reducedDims))){
+    ## placeholders, works for now (data) until work on multi alignment
+    object1 = t(sce.object@reducedDims[[data.use]][,object1.idx]);
+    object2 = t(sce.object@reducedDims[[data.use]][,object2.idx]);
   }else{
-    print("Choice for data.use does not exist in scAlign class.")
+    print("Choice for data.use does not exist in SCE assays or reducedDims.")
   }
   return(list(object1, object2, object1.name, object2.name, data.use))
 }

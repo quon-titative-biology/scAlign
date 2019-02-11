@@ -67,13 +67,15 @@
 #'
 #' ## Run scAlign with high_var_genes
 #' scAlignHSC = scAlign(scAlignHSC,
-#'                     options=scAlignOptions(steps=1, log.every=1, early.stop=FALSE, architecture="large"),
+#'                     options=scAlignOptions(steps=100, log.every=100, early.stop=FALSE, architecture="small"),
 #'                     encoder.data="scale.data",
-#'                     supervised='none',
-#'                     run.encoder=TRUE,
-#'                     run.decoder=TRUE,
-#'                     log.results=FALSE,
-#'                     device="CPU")
+#'                      supervised='none',
+#'                      run.encoder=TRUE,
+#'                      run.decoder=TRUE,
+#'                      log.results=FALSE,
+#'                      device="CPU")
+
+#' print(scAlignHSC@reducedDims[["ALIGNED-GENE"]])
 #'
 #' ## Plot alignment for 3 input types
 #' example_plot = PlotTSNE(scAlignHSC, "ALIGNED-GENE", "labels", title="scAlign-Gene", perplexity=30)
@@ -81,37 +83,43 @@
 #' @export
 PlotTSNE = function(object, data.use, labels.use, cols=NULL, title="", legend="none", seed=1234, ...){
     x=y=NULL ## Appease R checker, doesn't like ggplot2 aes() variables
-    res = Rtsne(object@reducedDims[[data.use]], ...)
-    if(labels.use == "labels"){
-      labels = object@colData@listData[["scAlign.labels"]]
-    }else{
-      labels = object@colData@listData[["group.by"]]
-    }
-    plot.me <- data.frame(x=res$Y[,1], y=res$Y[,2], labels=labels, stringsAsFactors=FALSE)
-    tsne.plot <- ggplot(plot.me, aes(x=x, y=y, colour = labels))
-    if(!is.null(cols)){ tsne.plot <- tsne.plot + scale_colour_manual(values=cols) }
-    tsne.plot <- tsne.plot +
-                     geom_point() +
-                     xlab('t-SNE 1') +
-                     ylab('t-SNE 2') +
-                     ggtitle(title) +
-                     theme_bw()      +
-                     theme(panel.border = element_blank(),
-                         panel.grid.major = element_blank(),
-                         panel.grid.minor = element_blank(),
-                         panel.background = element_rect(fill = "transparent"), # bg of the panel
-                         plot.background = element_rect(fill = "transparent", color = NA),
-                         axis.line = element_line(colour = 'black',size=1),
-                         plot.title = element_text(color='black', size=64, hjust = 0.5),
-                         axis.text.x = element_text(color='black', size=14),
-                         axis.text.y = element_text(color='black', size=14),
-                         axis.title=element_text(size=24),
-                         legend.position=legend,
-                         legend.background = element_rect(fill = "transparent"), # get rid of legend bg
-                         legend.box.background = element_rect(fill = "transparent"), # get rid of legend panel bg
-                         legend.title=element_blank(),
-                         legend.text=element_text(size=rel(3.0)))
-    return(tsne.plot)
+    tryCatch({
+      res = Rtsne(object@reducedDims[[data.use]], ...)
+      if(labels.use == "labels"){
+        labels = object@colData@listData[["scAlign.labels"]]
+      }else{
+        labels = object@colData@listData[["group.by"]]
+      }
+      plot.me <- data.frame(x=res$Y[,1], y=res$Y[,2], labels=labels, stringsAsFactors=FALSE)
+      tsne.plot <- ggplot(plot.me, aes(x=x, y=y, colour = labels))
+      if(!is.null(cols)){ tsne.plot <- tsne.plot + scale_colour_manual(values=cols) }
+      tsne.plot <- tsne.plot +
+                       geom_point() +
+                       xlab('t-SNE 1') +
+                       ylab('t-SNE 2') +
+                       ggtitle(title) +
+                       theme_bw()      +
+                       theme(panel.border = element_blank(),
+                           panel.grid.major = element_blank(),
+                           panel.grid.minor = element_blank(),
+                           panel.background = element_rect(fill = "transparent"), # bg of the panel
+                           plot.background = element_rect(fill = "transparent", color = NA),
+                           axis.line = element_line(colour = 'black',size=1),
+                           plot.title = element_text(color='black', size=64, hjust = 0.5),
+                           axis.text.x = element_text(color='black', size=14),
+                           axis.text.y = element_text(color='black', size=14),
+                           axis.title=element_text(size=24),
+                           legend.position=legend,
+                           legend.background = element_rect(fill = "transparent"), # get rid of legend bg
+                           legend.box.background = element_rect(fill = "transparent"), # get rid of legend panel bg
+                           legend.title=element_blank(),
+                           legend.text=element_text(size=rel(3.0)))
+      return(tsne.plot)
+    }, error = function(e){
+      print("Error plotting the data provided.")
+      print(e)
+      return(NULL)
+    })
 }
 
 #' Check for whole number

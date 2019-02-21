@@ -98,11 +98,18 @@ gene-level counts, transformations of those gene level counts or a preliminary s
 as cannocial correlates or principal component scores. Here we create the scAlign object from the previously definied Seurat objects and perform both PCA and CCA on the unaligned data.
 
 ```R
+## Create SCE objects to pass into scAlignCreateObject
+youngMouseSCE <- SingleCellExperiment(
+    assays = list(counts = youngMouseSeuratObj@raw.data, scale.data = youngMouseSeuratObj@scale.data)
+)
+
+oldMouseSCE <- SingleCellExperiment(
+    assays = list(counts = oldMouseSeuratObj@raw.data, scale.data = oldMouseSeuratObj@scale.data)
+)
+
 ## Build the scAlign class object and compute PCs
-scAlignHSC = scAlignCreateObject(objects = list("YOUNG"=youngMouseSeuratObj, 
-                                                "OLD"=oldMouseSeuratObj),
-                                 labels = list(youngMouseSeuratObj@meta.data$label,                                                                                  oldMouseSeuratObj@meta.data$label),
-                                 genes.use=genes.use, 
+scAlignHSC = scAlignCreateObject(sce.objects = list("YOUNG"=youngMouseSCE, "OLD"=oldMouseSCE),
+                                 labels = list(youngMouseSeuratObj@meta.data$label, oldMouseSeuratObj@meta.data$label),
                                  pca.reduce = TRUE,
                                  pcs.compute = 50,
                                  cca.reduce = TRUE,

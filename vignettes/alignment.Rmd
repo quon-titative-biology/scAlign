@@ -31,6 +31,7 @@ First, we perform a typical scRNA preprocessing step using the Seurat package. T
 ```R
 library(scAlign)
 library(Seurat)
+library(gridExtra)
 
 working.dir = "." #where our data file, kowalcyzk_gene_counts.rda is located
 results.dir = "." #where the output should be stored

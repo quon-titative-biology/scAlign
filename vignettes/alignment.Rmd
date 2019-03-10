@@ -24,7 +24,7 @@ The following is a walkthrough of a typical alignment problem for scAlign and ha
 2. Accurately labeling old cells with cell cycle and cell type information using only the young cell annotations.
 
 ## Data setup
-The gene count matrices for this tutorial are hosted [here](https://github.com/ucdavis/quonlab/blob/master/software/scAlign/data/tutorials/kowalcyzk_gene_counts.rda).
+The gene count matrices for this tutorial are hosted [here](https://github.com/quon-titative-biology/data/blob/master/kowalcyzk_gene_counts.rda).
 
 First, we perform a typical scRNA preprocessing step using the Seurat package. Then, reduce to the top 3,000 highly variable genes from both datasets to improve convergence and reduce computation time.
 
@@ -124,7 +124,7 @@ removed allowing us to use the complete dataset for downstream analyses such as 
 ```R
 ## Run scAlign with high_var_genes
 scAlignHSC = scAlign(scAlignHSC,
-                     options=scAlignOptions(steps=5000, log.every=3000),
+                     options=scAlignOptions(steps=5000, norm=TRUE, log.every=3000),
                      data.use="scale.data",
                      supervised='none',
                      run.encoder=TRUE,
@@ -134,7 +134,7 @@ scAlignHSC = scAlign(scAlignHSC,
 
 ## Additional run of scAlign with PCA
 scAlignHSC = scAlign(scAlignHSC,
-                     options=scAlignOptions(steps=5000, log.every=3000),
+                     options=scAlignOptions(steps=15000, norm=TRUE, log.every=3000),
                      data.use="PCA",
                      supervised='none',
                      run.encoder=TRUE,
@@ -144,7 +144,7 @@ scAlignHSC = scAlign(scAlignHSC,
 
 ## Additional run of scAlign with CCA
 scAlignHSC = scAlign(scAlignHSC,
-                     options=scAlignOptions(steps=5000, log.every=3000),
+                     options=scAlignOptions(steps=5000, norm=TRUE, log.every=3000),
                      data.use="CCA",
                      supervised='none',
                      run.encoder=TRUE,

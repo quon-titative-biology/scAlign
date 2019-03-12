@@ -126,7 +126,7 @@ removed allowing us to use the complete dataset for downstream analyses such as 
 ```R
 ## Run scAlign with high_var_genes
 scAlignHSC = scAlign(scAlignHSC,
-                     options=scAlignOptions(steps=5000, norm=TRUE, log.every=3000),
+                     options=scAlignOptions(steps=5000, norm=TRUE, log.every=3000, early.stop=TRUE),
                      encoder.data="scale.data",
                      supervised='none',
                      run.encoder=TRUE,
@@ -136,7 +136,7 @@ scAlignHSC = scAlign(scAlignHSC,
 
 ## Additional run of scAlign with PCA
 scAlignHSC = scAlign(scAlignHSC,
-                     options=scAlignOptions(steps=15000, norm=TRUE, log.every=3000),
+                     options=scAlignOptions(steps=15000, norm=TRUE, log.every=3000, early.stop=FALSE),
                      encoder.data="PCA",
                      supervised='none',
                      run.encoder=TRUE,
@@ -146,7 +146,7 @@ scAlignHSC = scAlign(scAlignHSC,
 
 ## Additional run of scAlign with CCA
 scAlignHSC = scAlign(scAlignHSC,
-                     options=scAlignOptions(steps=5000, norm=TRUE, log.every=3000),
+                     options=scAlignOptions(steps=5000, norm=TRUE, log.every=3000, early.stop=TRUE),
                      encoder.data="CCA",
                      supervised='none',
                      run.encoder=TRUE,

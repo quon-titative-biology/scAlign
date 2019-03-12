@@ -4,7 +4,7 @@ author: "Nelson Johansen, Gerald Quon"
 date: "`r Sys.Date()`"
 output: pdf_document
 vignette: >
-  %\VignetteIndexEntry{alignment_tutorial} 
+  %\VignetteIndexEntry{alignment_tutorial}
   %\VignetteEngine{knitr::rmarkdown}
   \usepackage[utf8]{inputenc}
 ---
@@ -24,7 +24,7 @@ The following is a walkthrough of a typical alignment problem for scAlign and ha
 2. Accurately labeling old cells with cell cycle and cell type information using only the young cell annotations.
 
 ## Data setup
-The gene count matrices for this tutorial are hosted [here](https://github.com/quon-titative-biology/data/blob/master/kowalcyzk_gene_counts.rda).
+The gene count matrices used for this tutorial are hosted [here](https://github.com/quon-titative-biology/data/blob/master/kowalcyzk_gene_counts.rda).
 
 First, we perform a typical scRNA preprocessing step using the Seurat package. Then, reduce to the top 3,000 highly variable genes from both datasets to improve convergence and reduce computation time.
 
@@ -42,7 +42,7 @@ load(file.path(working.dir, 'kowalcyzk_gene_counts.rda'))
 
 ## Extract age and cell type labels
 cell_age = unlist(lapply(strsplit(colnames(C57BL6_mouse_data), "_"), "[[", 1))
-cell_type = gsub('HSC', '', 
+cell_type = gsub('HSC', '',
                  unlist(
                  lapply(strsplit(colnames(C57BL6_mouse_data), "_"), "[[", 2)
                  ))
@@ -53,35 +53,35 @@ young_data = C57BL6_mouse_data[row_id, which(cell_age == "young")]
 old_data   = C57BL6_mouse_data[row_id, which(cell_age == "old")]
 
 ## Set up young mouse Seurat object
-youngMouseSeuratObj <- CreateSeuratObject(raw.data = young_data, 
-                                          project = "MOUSE_AGE", 
+youngMouseSeuratObj <- CreateSeuratObject(raw.data = young_data,
+                                          project = "MOUSE_AGE",
                                           min.cells = 0)
 youngMouseSeuratObj@meta.data$stim  <- "YOUNG"
 youngMouseSeuratObj@meta.data$label <- cell_type[which(cell_age == "young")]
-youngMouseSeuratObj <- FilterCells(youngMouseSeuratObj, 
-                                   subset.names = "nGene", 
-                                   low.thresholds = 100, 
+youngMouseSeuratObj <- FilterCells(youngMouseSeuratObj,
+                                   subset.names = "nGene",
+                                   low.thresholds = 100,
                                    high.thresholds = Inf)
 youngMouseSeuratObj <- NormalizeData(youngMouseSeuratObj)
-youngMouseSeuratObj <- ScaleData(youngMouseSeuratObj, 
-                                 do.scale=T, 
+youngMouseSeuratObj <- ScaleData(youngMouseSeuratObj,
+                                 do.scale=T,
                                  do.center=T,
                                  display.progress = T)
 
 ## Set up old mouse Seurat object
-oldMouseSeuratObj <- CreateSeuratObject(raw.data = old_data, 
-                                        project = "MOUSE_AGE", 
+oldMouseSeuratObj <- CreateSeuratObject(raw.data = old_data,
+                                        project = "MOUSE_AGE",
                                         min.cells = 0)
 oldMouseSeuratObj@meta.data$stim <- "OLD"
 oldMouseSeuratObj@meta.data$label <- cell_type[which(cell_age == "old")]
-oldMouseSeuratObj <- FilterCells(oldMouseSeuratObj, 
-                                 subset.names = "nGene", 
-                                 low.thresholds = 100, 
+oldMouseSeuratObj <- FilterCells(oldMouseSeuratObj,
+                                 subset.names = "nGene",
+                                 low.thresholds = 100,
                                  high.thresholds = Inf)
 oldMouseSeuratObj <- NormalizeData(oldMouseSeuratObj)
-oldMouseSeuratObj <- ScaleData(oldMouseSeuratObj, 
-                               do.scale=T, 
-                               do.center=T, 
+oldMouseSeuratObj <- ScaleData(oldMouseSeuratObj,
+                               do.scale=T,
+                               do.center=T,
                                display.progress = T)
 
 ## Gene selection
@@ -94,8 +94,8 @@ genes.use <- intersect(genes.use, rownames(youngMouseSeuratObj@scale.data))
 genes.use <- intersect(genes.use, rownames(oldMouseSeuratObj@scale.data))
 ```
 
-## scAlign setup 
-The general design of scAlign's makes it agnostic to the input RNA-seq data representation. Thus, the input data can either be 
+## scAlign setup
+The general design of scAlign's makes it agnostic to the input RNA-seq data representation. Thus, the input data can either be
 gene-level counts, transformations of those gene level counts or a preliminary step of dimensionality reduction such
 as cannocial correlates or principal component scores. Here we create the scAlign object from the previously definied Seurat objects and perform both PCA and CCA on the unaligned data.
 
@@ -120,7 +120,7 @@ scAlignHSC = scAlignCreateObject(sce.objects = list("YOUNG"=youngMouseSCE, "OLD"
 ```
 
 ## Alignment of young and old HSCs
-Now we align the young and old cpopulations. scAlign returns a low-dimensional joint embedding space where the effect of age is 
+Now we align the young and old cpopulations. scAlign returns a low-dimensional joint embedding space where the effect of age is
 removed allowing us to use the complete dataset for downstream analyses such as clustering or differential expression.
 
 ```R
@@ -154,9 +154,9 @@ scAlignHSC = scAlign(scAlignHSC,
                      log.dir=file.path(results.dir, 'models','cca_input'),
                      device="CPU")
 
-## Plot aligned data in tSNE space, when the data was processed in three different ways: 
-##   1) either using the original gene inputs, 
-##   2) after PCA dimensionality reduction for preprocessing, or 
+## Plot aligned data in tSNE space, when the data was processed in three different ways:
+##   1) either using the original gene inputs,
+##   2) after PCA dimensionality reduction for preprocessing, or
 ##   3) after CCA dimensionality reduction for preprocessing.
 ##   Cells here are colored by input labels
 
@@ -185,9 +185,8 @@ We now visualize the alignment of Kowalcyzk et al. for each data type:
 ![Test](./combined_plot_alignment_stim.png)
 </p>
 
-Labeling the aligned cells reveals that scAlign learns a joint embedding space which preserves cell type information: 
+Labeling the aligned cells reveals that scAlign learns a joint embedding space which preserves cell type information:
 
 <p>
 ![Test](./combined_plot_alignment_label.png)
 </p>
-

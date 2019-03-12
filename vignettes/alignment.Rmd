@@ -160,29 +160,24 @@ scAlignHSC = scAlign(scAlignHSC,
 ##   3) after CCA dimensionality reduction for preprocessing.
 ##   Cells here are colored by input labels
 
-gene_plot = PlotTSNE(scAlignHSC, "GENE", "labels", title="Gene")
-pca_plot = PlotTSNE(scAlignHSC, "PCA", "labels", title="PCA")
-cca_plot = PlotTSNE(scAlignHSC, "CCA", "labels", title="CCA")
-legend = get_legend(PlotTSNE(scAlignHSC, "GENE", "group", 
-                             legend="right", max_iter=1))
+set.seed(5678)
+gene_plot = PlotTSNE(scAlignHSC, "ALIGNED-GENE", title="scAlign-Gene", perplexity=30)
+pca_plot = PlotTSNE(scAlignHSC, "ALIGNED-PCA", title="scAlign-PCA", perplexity=30)
+cca_plot = PlotTSNE(scAlignHSC, "ALIGNED-CCA", title="scAlign-CCA", perplexity=30)
+legend = get_legend(PlotTSNE(scAlignHSC, "ALIGNED-GENE", title="scAlign-Gene", legend="right", max_iter=1))
 
-ggsave(grid.arrange(gene_plot, pca_plot, cca_plot, legend, nrow = 1,
-       layout_matrix=cbind(1,1,1,2,2,2,3,3,3,4)),
-       file=paste0(working.dir, "/combined_plot_alignment_label.png"),
-       height=12, width=36)
+ggsave(grid.arrange(gene_plot, pca_plot, cca_plot, legend, nrow = 1, layout_matrix=cbind(1,1,1,2,2,2,3,3,3,4)),
+      file=file.path('~/combined_plot_alignment_colorby_label.png'), height=12, width=36)
 
 ## Plot alignment for 3 input types
-gene_plot = PlotTSNE(scAlignHSC, "GENE", "group", cols=c("red","blue"), title="Gene")
-pca_plot = PlotTSNE(scAlignHSC, "PCA", "group", cols=c("red","blue"), title="PCA")
-cca_plot = PlotTSNE(scAlignHSC, "CCA", "group", cols=c("red","blue"), title="CCA")
-legend = get_legend(PlotTSNE(scAlignHSC, "GENE", "group", 
-                             cols=c("red","blue"), 
-                             legend="right", max_iter=1))
+set.seed(5678)
+gene_plot = PlotTSNE(scAlignHSC, "ALIGNED-GENE", title="scAlign-Gene", cols=c("red","blue"), labels.use="group.by", perplexity=30)
+pca_plot = PlotTSNE(scAlignHSC, "ALIGNED-PCA", title="scAlign-PCA", cols=c("red","blue"), labels.use="group.by", perplexity=30)
+cca_plot = PlotTSNE(scAlignHSC, "ALIGNED-CCA", title="scAlign-CCA", cols=c("red","blue"), labels.use="group.by", perplexity=30)
+legend = get_legend(PlotTSNE(scAlignHSC, "ALIGNED-GENE", title="scAlign-Gene", cols=c("red","blue"), labels.use="group.by", legend="right", max_iter=1))
 
-ggsave(grid.arrange(gene_plot, pca_plot, cca_plot, legend, nrow = 1, 
-      layout_matrix=cbind(1,1,1,2,2,2,3,3,3,4)),
-      file=paste0(working.dir, "/combined_plot_alignment_stim.png"), 
-      height=12, width=36)
+ggsave(grid.arrange(gene_plot, pca_plot, cca_plot, legend, nrow = 1, layout_matrix=cbind(1,1,1,2,2,2,3,3,3,4)),
+     file=file.path("~/combined_plot_alignment_colorby_dataset.png"), height=12, width=36)
 ```
 
 We now visualize the alignment of Kowalcyzk et al. for each data type:

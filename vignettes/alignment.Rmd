@@ -101,11 +101,11 @@ as cannocial correlates or principal component scores. Here we create the scAlig
 ```R
 ## Create SCE objects to pass into scAlignCreateObject
 youngMouseSCE <- SingleCellExperiment(
-    assays = list(counts = youngMouseSeuratObj@raw.data, scale.data = youngMouseSeuratObj@scale.data[genes.use,])
+    assays = list(counts = youngMouseSeuratObj@raw.data[genes.use,], scale.data = youngMouseSeuratObj@scale.data[genes.use,])
 )
 
 oldMouseSCE <- SingleCellExperiment(
-    assays = list(counts = oldMouseSeuratObj@raw.data, scale.data = oldMouseSeuratObj@scale.data[genes.use,])
+    assays = list(counts = oldMouseSeuratObj@raw.data[genes.use,], scale.data = oldMouseSeuratObj@scale.data[genes.use,])
 )
 
 ## Build the scAlign class object and compute PCs

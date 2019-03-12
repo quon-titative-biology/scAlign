@@ -30,6 +30,7 @@ First, we perform a typical scRNA preprocessing step using the Seurat package. T
 
 ```R
 library(scAlign)
+library(SingleCellExperiment)
 library(Seurat)
 library(gridExtra)
 

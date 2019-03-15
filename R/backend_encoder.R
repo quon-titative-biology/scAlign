@@ -18,7 +18,6 @@
 #' @param debug Sets the verbosity level
 #'
 #' @import tensorflow
-#' @import tfdatasets
 #'
 #' @keywords internal
 encoderModel_add_semisup_loss_data_driven = function(p_target, a, b, data_shape, walker_weight=1.0, visit_weight=1.0, mode='source', comp='exp', betas=NULL, diag="zero", debug=TRUE){
@@ -72,7 +71,6 @@ encoderModel_add_semisup_loss_data_driven = function(p_target, a, b, data_shape,
 #' @param smoothing tensorflow label_smoothing (unused)
 #'
 #' @import tensorflow
-#' @import tfdatasets
 #'
 #' @keywords internal
 encoderModel_add_logit_loss = function(logits, labels, weight=1.0, smoothing=0.0){
@@ -105,7 +103,6 @@ encoderModel_add_logit_loss = function(logits, labels, weight=1.0, smoothing=0.0
 #' @param diag indicator for self similarity
 #'
 #' @import tensorflow
-#' @import tfdatasets
 #'
 #' @keywords internal
 encoderModel_gaussian_kernel = function(data, data_b=NULL, dimen, perplexity=30, method="euclidean", diag="zero"){
@@ -208,7 +205,6 @@ encoderModel_gaussian_kernel = function(data, data_b=NULL, dimen, perplexity=30,
 #' @param is_training Determines whether dropout and batch norm are run.
 #'
 #' @import tensorflow
-#' @import tfdatasets
 #'
 #' @keywords internal
 encoderModel_data_to_embedding = function(model_func, data, is_training=TRUE){
@@ -229,7 +225,6 @@ encoderModel_data_to_embedding = function(model_func, data, is_training=TRUE){
 #' @param is_training Determines whether dropout and batch norm are run.
 #'
 #' @import tensorflow
-#' @import tfdatasets
 #'
 #' @keywords internal
 encoderModel_embedding_to_logit = function(data, num_labels, is_training=TRUE){
@@ -260,7 +255,6 @@ encoderModel_embedding_to_logit = function(data, num_labels, is_training=TRUE){
 #' @param FLAGS Tensorflow run arguments
 #'
 #' @import tensorflow
-#' @import tfdatasets
 #'
 #' @keywords internal
 encoderModel_calc_embedding = function(sess, data, endpoint, test_in, FLAGS, batch_size=150){
@@ -286,7 +280,6 @@ encoderModel_calc_embedding = function(sess, data, endpoint, test_in, FLAGS, bat
 #' @return Tensorflow training op
 #'
 #' @import tensorflow
-#' @import tfdatasets
 #'
 #' @keywords internal
 encoderModel_create_train_op = function(learning_rate, step){

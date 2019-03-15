@@ -19,7 +19,6 @@ Depends: R (>= 3.6)
 Imports: SingleCellExperiment,
          Seurat,
 	 tensorflow,
-	 tfdatasets,
 	 purrr,
          irlba,
 	 Rtsne,

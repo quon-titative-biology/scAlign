@@ -14,7 +14,6 @@
 #' @param batch_norm Determines if batch normalization layers should be included
 #'
 #' @import tensorflow
-#' @import tfdatasets
 #'
 #' @keywords internal
 encoder_small = function(inputs,
@@ -52,8 +51,16 @@ encoder_small = function(inputs,
 #'
 #' @return Neural network graph op
 #'
+#' @param inputs Mini-batch placeholder
+#' @param input_size Number of features per cell
+#' @param complexity Determines the depth and width of an automatically created network
+#' @param emb_size Number of hidden nodes in final (embedding) hidden layer
+#' @param l2_weight Weight on l2_regularizer
+#' @param dropout_rate Probability for dropout.
+#' @param is_training Determines if dropout and batch norm should be include in pass through network
+#' @param batch_norm Determines if batch normalization layers should be included
+#'
 #' @import tensorflow
-#' @import tfdatasets
 #'
 #' @keywords internal
 encoder_medium = function(inputs,
@@ -98,10 +105,18 @@ encoder_medium = function(inputs,
 #'
 #' Defines network architecture for scAlign.
 #'
+#' @param inputs Mini-batch placeholder
+#' @param input_size Number of features per cell
+#' @param complexity Determines the depth and width of an automatically created network
+#' @param emb_size Number of hidden nodes in final (embedding) hidden layer
+#' @param l2_weight Weight on l2_regularizer
+#' @param dropout_rate Probability for dropout.
+#' @param is_training Determines if dropout and batch norm should be include in pass through network
+#' @param batch_norm Determines if batch normalization layers should be included
+#'
 #' @return Neural network graph op
 #'
 #' @import tensorflow
-#' @import tfdatasets
 #'
 #' @keywords internal
 encoder_large = function(inputs,
@@ -167,7 +182,6 @@ encoder_large = function(inputs,
 #' @param batch_norm Determines if batch normalization layers should be included
 #'
 #' @import tensorflow
-#' @import tfdatasets
 #'
 #' @keywords internal
 decoder_small = function(inputs,
@@ -203,10 +217,18 @@ decoder_small = function(inputs,
 #'
 #' Defines network architecture for scAlign.
 #'
+#' @param inputs Mini-batch placeholder
+#' @param complexity Determines the depth and width of an automatically created network
+#' @param final_dim Number of features in high dimensional data
+#' @param emb_size Number of hidden nodes in final (embedding) hidden layer
+#' @param l2_weight Weight on l2_regularizer
+#' @param dropout_rate Probability for dropout.
+#' @param is_training Determines if dropout and batch norm should be include in pass through network
+#' @param batch_norm Determines if batch normalization layers should be included
+#'
 #' @return Neural network graph op
 #'
 #' @import tensorflow
-#' @import tfdatasets
 #'
 #' @keywords internal
 decoder_medium = function(inputs,
@@ -251,10 +273,18 @@ decoder_medium = function(inputs,
 #'
 #' Defines network architecture for scAlign.
 #'
+#' @param inputs Mini-batch placeholder
+#' @param complexity Determines the depth and width of an automatically created network
+#' @param final_dim Number of features in high dimensional data
+#' @param emb_size Number of hidden nodes in final (embedding) hidden layer
+#' @param l2_weight Weight on l2_regularizer
+#' @param dropout_rate Probability for dropout.
+#' @param is_training Determines if dropout and batch norm should be include in pass through network
+#' @param batch_norm Determines if batch normalization layers should be included
+#'
 #' @return Neural network graph op
 #'
 #' @import tensorflow
-#' @import tfdatasets
 #'
 #' @keywords internal
 decoder_large = function(inputs,

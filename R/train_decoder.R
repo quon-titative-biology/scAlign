@@ -12,7 +12,6 @@
 #' @param all_data_emb Low dimensional cells from all conditions to project
 #'
 #' @import tensorflow
-#' @import tfdatasets
 #' @import purrr
 #'
 #' @keywords internal
@@ -23,14 +22,16 @@ decoderModel_train_decoder = function(FLAGS, config, mode,
   graph = tf$Graph()
   with(graph$as_default(), {
     print("Graph construction")
-    data_emb_ph  = tf$placeholder(tf$float32, shape(NULL,as.integer(ncol(data_emb))))
-    data_full_ph = tf$placeholder(tf$float32, shape(NULL,as.integer(ncol(data_full))))
-    dataset      = tfdatasets::tensor_slices_dataset(tuple(data_emb_ph, data_full_ph))  %>%
-                     tfdatasets::dataset_shuffle(nrow(data_full)) %>%
-                     tfdatasets::dataset_repeat() %>%
-                     tfdatasets::dataset_batch(FLAGS$unsup_batch_size)
-    dataset_iter = tfdatasets::make_iterator_initializable(dataset)
-    mini_batch   = tfdatasets::iterator_get_next(dataset_iter)
+    with(tf$name_scope("decoder_data"), {
+      data_emb_ph  = tf$placeholder(tf$float32, shape(NULL,as.integer(ncol(data_emb))))
+      data_full_ph = tf$placeholder(tf$float32, shape(NULL,as.integer(ncol(data_full))))
+      dataset      = tf$data$Dataset$from_tensor_slices(tuple(data_emb_ph, data_full_ph))
+      dataset      = dataset$shuffle(dim(data_emb)[1])
+      dataset      = dataset$`repeat`()
+      dataset      = dataset$batch(FLAGS$unsup_batch_size)
+      dataset_iter = dataset$make_initializable_iterator()
+      mini_batch   = dataset_iter$get_next()
+    })
 
     model_function_decoder = partial(
         match.fun(paste0("decoder_", FLAGS$decoder)),

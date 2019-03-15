@@ -9,7 +9,6 @@
 #' @param is_training Determines whether dropout and batch norm are run.
 #'
 #' @import tensorflow
-#' @import tfdatasets
 #'
 #' @keywords internal
 decoderModel_emb_to_proj = function(model_func, data, is_training=TRUE){
@@ -32,7 +31,6 @@ decoderModel_emb_to_proj = function(model_func, data, is_training=TRUE){
 #' @param FLAGS Tensorflow run arguments
 #'
 #' @import tensorflow
-#' @import tfdatasets
 #'
 #' @keywords internal
 decoderModel_calc_projection = function(sess, data, data_full, endpoint, test_in, FLAGS, batch_size=150){
@@ -54,7 +52,6 @@ decoderModel_calc_projection = function(sess, data, data_full, endpoint, test_in
 #' @param debug Verbosity of command line output
 #'
 #' @import tensorflow
-#' @import tfdatasets
 #'
 #' @keywords internal
 decoderModel_add_mse_loss = function(proj, data, mode, debug=TRUE){
@@ -80,7 +77,6 @@ decoderModel_add_mse_loss = function(proj, data, mode, debug=TRUE){
 #' @param step Global training step
 #'
 #' @import tensorflow
-#' @import tfdatasets
 #'
 #' @keywords internal
 decoderModel_create_train_op = function(learning_rate, step){

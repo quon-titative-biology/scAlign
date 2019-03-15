@@ -15,6 +15,7 @@
 #' @param device Specify hardware to use.
 #' @param log.dir Location to save results.
 #' @param log.results Determines if results should be written to log.dir.
+#' @param full_norm
 #'
 #' @examples
 #'
@@ -33,33 +34,27 @@
 #' stim.data = data[,which(age == "old")]
 #'
 #' ctrl = CreateSeuratObject(raw.data = ctrl.data, project = "MOUSE_AGE", min.cells = 0)
-#' ctrl@meta.data$stim  = "YOUNG"
-#' ctrl@meta.data$label = labels[which(age == "young")]
 #' ctrl = ScaleData(ctrl, do.scale=TRUE, do.center=TRUE, scale.max=50, display.progress = TRUE)
 #'
 #' stim = CreateSeuratObject(raw.data = stim.data, project = "MOUSE_AGE", min.cells = 0)
-#' stim@meta.data$stim = "OLD"
-#' stim@meta.data$label = labels[which(age == "old")]
 #' stim = ScaleData(stim, do.scale=TRUE, do.center=TRUE, scale.max=50, display.progress = TRUE)
 #'
 #' ## Build the SCE object for input to scAlign using Seurat preprocessing and variable gene selection
 #' ctrl.sce <- SingleCellExperiment(
 #'               assays = list(
-#'                 counts = ctrl@raw.data,
-#'                 scale.data = ctrl@scale.data),
-#'               colData = ctrl@meta.data)
+#'                 counts = t(FetchData(ctrl, vars.all=rownames(data), use.raw=TRUE)),
+#'                 scale.data = t(FetchData(ctrl, vars.all=rownames(data), use.scaled=TRUE)))
 #'
 #' stim.sce <- SingleCellExperiment(
 #'               assays = list(
-#'                 counts = stim@raw.data,
-#'                 scale.data = stim@scale.data),
-#'               colData = stim@meta.data)
+#'                 counts = t(FetchData(stim, vars.all=rownames(data), use.raw=TRUE)),
+#'                 scale.data = t(FetchData(stim, vars.all=rownames(data), use.scaled=TRUE)))
 #'
 #' ## Build the scAlign class object and compute PCs
 #' scAlignHSC = scAlignCreateObject(sce.objects = list("YOUNG"=ctrl.sce,
 #'                                                     "OLD"=stim.sce),
-#'                                  labels = list(ctrl.sce@colData@listData$label,
-#'                                                stim.sce@colData@listData$label),
+#'                                  labels = list(cell_type[which(cell_age == "young")],
+#'                                                cell_type[which(cell_age == "old")]),
 #'                                  pca.reduce = TRUE,
 #'                                  pcs.compute = 50,
 #'                                  cca.reduce = TRUE,
@@ -68,13 +63,13 @@
 #'
 #' ## Run scAlign with high_var_genes
 #' scAlignHSC = scAlign(scAlignHSC,
-#'                     options=scAlignOptions(steps=1, log.every=1, early.stop=TRUE, architecture="large"),
-#'                     encoder.data="scale.data",
-#'                     supervised='none',
-#'                     run.encoder=TRUE,
-#'                     run.decoder=TRUE,
-#'                     log.results=FALSE,
-#'                     device="CPU")
+#'                    options=scAlignOptions(steps=1000, log.every=1000, norm=TRUE, early.stop=TRUE),
+#'                    encoder.data="scale.data",
+#'                    supervised='none',
+#'                    run.encoder=TRUE,
+#'                    run.decoder=FALSE,
+#'                    log.dir=file.path(results.dir, 'models','gene_input'),
+#'                    device="CPU")
 #'
 #' @import SingleCellExperiment
 #' @import tensorflow
@@ -83,12 +78,12 @@
 #' @export
 scAlign = function(sce.object,
                    options = scAlignOptions(),
-                   encoder.data="scale.data",
+                   encoder.data,
                    decoder.data=encoder.data,
                    ## Unified model options
                    supervised="none",
                    run.encoder=TRUE,
-                   run.decoder=TRUE,
+                   run.decoder=FALSE,
                    ## Where to save model results
                    log.dir="./models/",
                    log.results=FALSE,
@@ -99,18 +94,18 @@ scAlign = function(sce.object,
     .check_tensorflow()
 
     ## Set options to class object
-    sce.object@metadata$options = options;
+    metadata(sce.object)[["options"]] = options;
 
     ## Record arguments passed to this function
-    sce.object@metadata$arguments = scAlignArguments(sce.object,
-                                                          encoder.data,
-                                                          decoder.data,
-                                                          supervised,
-                                                          run.encoder,
-                                                          run.decoder,
-                                                          log.dir,
-                                                          log.results,
-                                                          device)
+    metadata(sce.object)[["arguments"]] = scAlignArguments(sce.object,
+                                                     encoder.data,
+                                                     decoder.data,
+                                                     supervised,
+                                                     run.encoder,
+                                                     run.decoder,
+                                                     log.dir,
+                                                     log.results,
+                                                     device)
 
     ## Indepth argument sanity checking
     .check_all_args(sce.object)
@@ -120,8 +115,9 @@ scAlign = function(sce.object,
     object1.name = encoder_data[[3]]; object2.name=encoder_data[[4]];
     data.use = encoder_data[[5]];
 
-    options   = sce.object@metadata$options
-    arguments = sce.object@metadata$arguments
+    ## Avoid multiple indexing
+    options   = metadata(sce.object)[["options"]]
+    arguments = metadata(sce.object)[["arguments"]]
 
     ## Set flags for all aspects of tensorflow training (encoder/decoder)
     FLAGS <- tensorflow::flags(
@@ -164,7 +160,7 @@ scAlign = function(sce.object,
       tensorflow::flag_string('walker_weight_envelope', 'None', 'Increase walker weight with an envelope: [None, sigmoid, linear]'),
       tensorflow::flag_integer('walker_weight_envelope_steps', 1, 'Number of steps (after delay), at which envelope saturates.'),
       tensorflow::flag_integer('walker_weight_envelope_delay', 1, 'Number of steps at which envelope starts.'),
-      tensorflow::flag_integer('leaky_weights', 0, 'If true: original weighting growth used (leaky during classifier pre-training),, else walker weight is restricted to exactly 0 before walker_weight_envelope_delay.'),
+      tensorflow::flag_integer('leaky_weights', 0, 'If true: original weighting growth used (leaky during classifier pre-training), else walker weight is restricted to exactly 0 before walker_weight_envelope_delay.'),
       ## Loss function: walker loss for object2 ##
       tensorflow::flag_numeric('target_walker_weight', 1.0, 'Weight for target walker loss.'),
       tensorflow::flag_string('target_walker_weight_envelope', 'None', 'Increase visit weight with an envelope: [None, sigmoid, linear]'),
@@ -187,7 +183,8 @@ scAlign = function(sce.object,
       tensorflow::flag_string('tsne_method', 'exact', 'exact or approximately compute p_ij'),
       tensorflow::flag_string('tsne_init', 'random', 'If int, random_state is the seed used by the random number generator'),
       ## Data options ##
-      tensorflow::flag_boolean('norm', options$norm, 'Perform L2 normalization prior to training.'),
+      tensorflow::flag_boolean('norm', options$norm, 'Perform L2 normalization during training on the mini batches.'),
+      tensorflow::flag_boolean('full_norm', options$full_norm, 'Perform L2 normalization prior to training on the full data matrix.'),
       ## Testing options ##
       tensorflow::flag_integer('mini_batch', 50, 'Number samples per testing batch.'),
       ## Hardware ##
@@ -206,8 +203,8 @@ scAlign = function(sce.object,
     if(FLAGS$log.results == TRUE){
       dir.create(file.path(FLAGS$logdir, '/model_full'), showWarnings = FALSE)
       dir.create(file.path(FLAGS$logdir, '/model_full/plots'), showWarnings = FALSE)
-      for(itr in seq_len(length(unique(sce.object@colData@listData[["group.by"]])))){
-          dir.create(file.path(FLAGS$logdir, paste0(unique(sce.object@colData@listData[["group.by"]])[itr], '_decoder')),
+      for(itr in seq_len(length(unique(colData(sce.object)[,"group.by"])))){
+          dir.create(file.path(FLAGS$logdir, paste0(unique(colData(sce.object)[,"group.by"])[itr], '_decoder')),
                      showWarnings = FALSE)
       }
       ## Write out all run options for reproducability
@@ -219,7 +216,7 @@ scAlign = function(sce.object,
     trg_mode = ifelse(is.element(FLAGS$supervised, c(object2.name, "both")), "supervised", "unsupervised")
 
     ## Determine data shape and label space once
-    num_labels = length(unique(sce.object@colData@listData$scAlign.labels)) ## determines number of logits for classifier
+    num_labels = length(unique(colData(sce.object)[,"scAlign.labels"])) ## determines number of logits for classifier
     data_shape = ncol(object1) ## source and target should have same shape
 
     ############################################################################
@@ -233,9 +230,9 @@ scAlign = function(sce.object,
                                                   num_labels, data_shape,
                                                   object1.name, object2.name,
                                                   object1, as.integer(
-                                                             as.factor(sce.object@colData@listData$scAlign.labels[object1.name == sce.object@colData@listData[["group.by"]]])),
+                                                             as.factor(colData(sce.object)[,"scAlign.labels"][object1.name == colData(sce.object)[,"group.by"]])),
                                                   object2, as.integer(
-                                                             as.factor(sce.object@colData@listData$scAlign.labels[object2.name == sce.object@colData@listData[["group.by"]]])))
+                                                             as.factor(colData(sce.object)[,"scAlign.labels"][object2.name == colData(sce.object)[,"group.by"]])))
         reducedDim(sce.object, paste0("ALIGNED-", data.use)) = aligned_data
       }
     }, error=function(e){
@@ -250,12 +247,12 @@ scAlign = function(sce.object,
 
         ## Try to load aligned data
         if(run.encoder == TRUE){
-          emb_dataset = sce.object@reducedDims[[paste0("ALIGNED-", data.use)]]
+          emb_dataset = reducedDim(sce.object, type=paste0("ALIGNED-", data.use))
         }else{
           emb_dataset = tryCatch({
               as.matrix(read.csv(paste0(FLAGS$logdir, '/model_alignment/train/emb_activations_', FLAGS$max_steps, '.csv'), header=FALSE, stringsAsFactors=FALSE))
           }, error=function(e) {
-               stop("Error loading previously aligned data.")
+               stop("Error loading previously aligned data, does not exist.")
           })
         }
 

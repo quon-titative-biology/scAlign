@@ -1,5 +1,7 @@
 #' Creates tsne plot
 #'
+#' Helper function to plot aligned data from the results of running scAlign().
+#'
 #' @return ggplot2 object
 #'
 #' @param object scAlign class object with aligned data
@@ -32,33 +34,39 @@
 #' stim.data = data[,which(age == "old")]
 #'
 #' ctrl = CreateSeuratObject(raw.data = ctrl.data, project = "MOUSE_AGE", min.cells = 0)
-#' ctrl@meta.data$stim  = "YOUNG"
-#' ctrl@meta.data$label = labels[which(age == "young")]
+#' ctrl <- AddMetaData(object = ctrl,
+#'                     metadata = "YOUNG",
+#'                     col.name = "stim")
+#' ctrl <- AddMetaData(object = ctrl,
+#'                     metadata = cell_type[which(cell_age == "young")],
+#'                     col.name = "label")
 #' ctrl = ScaleData(ctrl, do.scale=TRUE, do.center=TRUE, scale.max=50, display.progress = TRUE)
 #'
 #' stim = CreateSeuratObject(raw.data = stim.data, project = "MOUSE_AGE", min.cells = 0)
-#' stim@meta.data$stim = "OLD"
-#' stim@meta.data$label = labels[which(age == "old")]
+#' stim <- AddMetaData(object = stim,
+#'                     metadata = "OLD",
+#'                     col.name = "stim")
+#' stim <- AddMetaData(object = stim,
+#'                     metadata = cell_type[which(cell_age == "old")],
+#'                     col.name = "label")
 #' stim = ScaleData(stim, do.scale=TRUE, do.center=TRUE, scale.max=50, display.progress = TRUE)
 #'
 #' ## Build the SCE object for input to scAlign using Seurat preprocessing and variable gene selection
 #' ctrl.sce <- SingleCellExperiment(
 #'               assays = list(
-#'                 counts = ctrl@raw.data,
-#'                 scale.data = ctrl@scale.data),
-#'               colData = ctrl@meta.data)
+#'                 counts = t(FetchData(ctrl, vars.all=rownames(data), use.raw=TRUE)),
+#'                 scale.data = t(FetchData(ctrl, vars.all=rownames(data), use.scaled=TRUE)))
 #'
 #' stim.sce <- SingleCellExperiment(
 #'               assays = list(
-#'                 counts = stim@raw.data,
-#'                 scale.data = stim@scale.data),
-#'               colData = stim@meta.data)
+#'                 counts = t(FetchData(stim, vars.all=rownames(data), use.raw=TRUE)),
+#'                 scale.data = t(FetchData(stim, vars.all=rownames(data), use.scaled=TRUE)))
 #'
 #' ## Build the scAlign class object and compute PCs
 #' scAlignHSC = scAlignCreateObject(sce.objects = list("YOUNG"=ctrl.sce,
 #'                                                     "OLD"=stim.sce),
-#'                                  labels = list(ctrl.sce@colData@listData$label,
-#'                                                stim.sce@colData@listData$label),
+#'                                  labels = list(cell_type[which(cell_age == "young")],
+#'                                                cell_type[which(cell_age == "old")]),
 #'                                  pca.reduce = TRUE,
 #'                                  pcs.compute = 50,
 #'                                  cca.reduce = TRUE,
@@ -67,34 +75,28 @@
 #'
 #' ## Run scAlign with high_var_genes
 #' scAlignHSC = scAlign(scAlignHSC,
-#'                     options=scAlignOptions(steps=100, log.every=100, early.stop=FALSE, architecture="small"),
-#'                     encoder.data="scale.data",
-#'                      supervised='none',
-#'                      run.encoder=TRUE,
-#'                      run.decoder=TRUE,
-#'                      log.results=FALSE,
-#'                      device="CPU")
-
-#' print(scAlignHSC@reducedDims[["ALIGNED-GENE"]])
+#'                    options=scAlignOptions(steps=1000, log.every=1000, norm=TRUE, early.stop=TRUE),
+#'                    encoder.data="scale.data",
+#'                    supervised='none',
+#'                    run.encoder=TRUE,
+#'                    run.decoder=FALSE,
+#'                    log.dir=file.path(results.dir, 'models','gene_input'),
+#'                    device="CPU")
 #'
 #' ## Plot alignment for 3 input types
 #' example_plot = PlotTSNE(scAlignHSC, "ALIGNED-GENE", "labels", title="scAlign-Gene", perplexity=30)
 #'
 #' @export
-PlotTSNE = function(object, data.use, labels.use, cols=NULL, title="", legend="none", seed=1234, ...){
+PlotTSNE = function(object, data.use, labels.use="scAlign.labels", cols=NULL, title="", legend="none", seed=1234, ...){
     x=y=NULL ## Appease R checker, doesn't like ggplot2 aes() variables
     tryCatch({
-      res = Rtsne(object@reducedDims[[data.use]], ...)
-      if(labels.use == "labels"){
-        labels = object@colData@listData[["scAlign.labels"]]
-      }else{
-        labels = object@colData@listData[["group.by"]]
-      }
+      res = Rtsne(reducedDim(object, data.use), ...)
+      labels = as.character(colData(object)[,labels.use])
       plot.me <- data.frame(x=res$Y[,1], y=res$Y[,2], labels=labels, stringsAsFactors=FALSE)
       tsne.plot <- ggplot(plot.me, aes(x=x, y=y, colour = labels))
       if(!is.null(cols)){ tsne.plot <- tsne.plot + scale_colour_manual(values=cols) }
       tsne.plot <- tsne.plot +
-                       geom_point() +
+                       geom_point(size=3) +
                        xlab('t-SNE 1') +
                        ylab('t-SNE 2') +
                        ggtitle(title) +
@@ -175,11 +177,24 @@ PlotTSNE = function(object, data.use, labels.use, cols=NULL, title="", legend="n
 #' @keywords internal
 .check_all_args = function(sce.object){
 
-  arguments = sce.object@metadata[["arguments"]]
-  options   = sce.object@metadata[["options"]]
+  ## Avoid multiple indexing
+  options   = metadata(sce.object)[["options"]]
+  arguments = metadata(sce.object)[["arguments"]]
+
+  ## Ensure data to be used for encoder is available
+  if((is.element(arguments[,"encoder.data"], names(assays(sce.object))) ||
+      is.element(arguments[,"encoder.data"], names(reducedDims(sce.object)))) == FALSE){
+        stop("encoder.data is not reachable in assays or reducedDims slots of combined SCE object.")
+      }
+
+  ## Ensure data to be used for decoder is available
+  if((is.element(arguments[,"decoder.data"], names(assays(sce.object))) ||
+      is.element(arguments[,"decoder.data"], names(reducedDims(sce.object)))) == FALSE){
+        stop("decoder.data is not reachable in assays or reducedDims slots of combined SCE object.")
+      }
 
   ## Parameter check
-  if (!is.character(arguments[,"supervised"]) || !is.element(arguments[,"supervised"], c("none", names(sce.object@assays), "both"))) { stop("supervised should be \"none\", \"[object.name(s)]\" or \"both\".") }
+  if (!is.character(arguments[,"supervised"]) || !is.element(arguments[,"supervised"], c("none", names(assays(sce.object)), "both"))) { stop("supervised should be \"none\", \"[object.name(s)]\" or \"both\".") }
   if (!is.character(arguments[,"device"])) { stop("device should be a string.") }
   if (!.is.wholenumber(options[,"batch.size"])) { stop("batch.size should be an integer.") }
   if (!.is.wholenumber(options[,"perplexity"])) { stop("perplexity should be an integer.") }
@@ -286,21 +301,21 @@ PlotTSNE = function(object, data.use, labels.use, cols=NULL, title="", legend="n
 #' @keywords internal
 .data_setup = function(sce.object, data.use){
   ## Get dataset names
-  object1.name = unique(sce.object@colData@listData[["group.by"]])[1]
-  object2.name = unique(sce.object@colData@listData[["group.by"]])[2]
+  object1.name = unique(colData(sce.object)[,"group.by"])[1]
+  object2.name = unique(colData(sce.object)[,"group.by"])[2]
   ## Get indices of two datasets (using overloaded ==)
-  object1.idx = object1.name == sce.object@colData@listData[["group.by"]]
-  object2.idx = object2.name == sce.object@colData@listData[["group.by"]]
+  object1.idx = object1.name == colData(sce.object)[,"group.by"]
+  object2.idx = object2.name == colData(sce.object)[,"group.by"]
   ## Set the data for current alignment
-  if(is.element(data.use, names(sce.object@assays))){
+  if(is.element(data.use, names(assays(sce.object)))){
     ## placeholders, works for now (data) until work on multi alignment
-    object1 = t(sce.object@assays[[data.use]][,object1.idx]);
-    object2 = t(sce.object@assays[[data.use]][,object2.idx]);
+    object1 = t(assay(sce.object, data.use)[,object1.idx]);
+    object2 = t(assay(sce.object, data.use)[,object2.idx]);
     data.use = "GENE"
-  }else if(is.element(data.use, names(sce.object@reducedDims))){
+  }else if(is.element(data.use, names(reducedDims(sce.object)))){
     ## placeholders, works for now (data) until work on multi alignment
-    object1 = t(sce.object@reducedDims[[data.use]][,object1.idx]);
-    object2 = t(sce.object@reducedDims[[data.use]][,object2.idx]);
+    object1 = reducedDim(sce.object, data.use)[object1.idx,];
+    object2 = reducedDim(sce.object, data.use)[object2.idx,];
   }else{
     print("Choice for data.use does not exist in SCE assays or reducedDims.")
   }

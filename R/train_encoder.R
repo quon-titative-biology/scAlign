@@ -39,7 +39,6 @@ define_kernel_matrix = function(method, data=NULL, labels=NULL, data_shape, perp
 #' @param target_labels Target data labels.
 #'
 #' @import tensorflow
-#' @import tfdatasets
 #' @import purrr
 #'
 #' @keywords internal
@@ -58,42 +57,34 @@ encoderModel_train_encoder = function(FLAGS, CV, config,
       if(FLAGS$supervised == "source" | FLAGS$supervised == "both"){
         source_data_ph   = tf$placeholder(tf$float32, shape(NULL,data_shape))
         source_labels_ph = tf$placeholder(tf$uint8, shape(NULL))
-        source_dataset   = tfdatasets::tensor_slices_dataset(tuple(source_data_ph, source_labels_ph))  %>%
-                              tfdatasets::dataset_shuffle(dim(source_data)[1]) %>%
-                              tfdatasets::dataset_repeat() %>%
-                              tfdatasets::dataset_batch(FLAGS$unsup_batch_size)
-        source_iter      = tfdatasets::make_iterator_initializable(source_dataset)
-        source_batch     = tfdatasets::iterator_get_next(source_iter)
+        source_dataset = tf$data$Dataset$from_tensor_slices(tuple(source_data_ph, source_labels_ph))
       }else{
         source_data_ph   = tf$placeholder(tf$float32, shape(NULL,data_shape))
-        source_dataset   = tfdatasets::tensor_slices_dataset(source_data_ph)  %>%
-                              tfdatasets::dataset_shuffle(dim(source_data)[1]) %>%
-                              tfdatasets::dataset_repeat() %>%
-                              tfdatasets::dataset_batch(FLAGS$unsup_batch_size)
-        source_iter      = tfdatasets::make_iterator_initializable(source_dataset)
-        source_batch     = list(tfdatasets::iterator_get_next(source_iter))
+        source_dataset = tf$data$Dataset$from_tensor_slices(source_data_ph)
       }
+      source_dataset = source_dataset$shuffle(dim(source_data)[1])
+      source_dataset = source_dataset$`repeat`()
+      source_dataset = source_dataset$batch(FLAGS$unsup_batch_size)
+      source_iter    = source_dataset$make_initializable_iterator()
+      source_batch   = source_iter$get_next()
+      if(typeof(source_batch) != "list"){source_batch = list(source_batch)}
     })
 
     with(tf$name_scope("target_data"), {
       if(FLAGS$supervised == "target" | FLAGS$supervised == "both"){
         target_data_ph   = tf$placeholder(tf$float32, shape(NULL,data_shape))
         target_labels_ph = tf$placeholder(tf$uint8, shape(NULL))
-        target_dataset   = tfdatasets::tensor_slices_dataset(tuple(target_data_ph, target_labels_ph))  %>%
-                              tfdatasets::dataset_shuffle(dim(target_data)[1]) %>%
-                              tfdatasets::dataset_repeat() %>%
-                              tfdatasets::dataset_batch(FLAGS$unsup_batch_size)
-        target_iter      = tfdatasets::make_iterator_initializable(target_dataset)
-        target_batch     = tfdatasets::iterator_get_next(target_iter)
+        target_dataset = tf$data$Dataset$from_tensor_slices(tuple(target_data_ph, target_labels_ph))
       }else{
         target_data_ph   = tf$placeholder(tf$float32, shape(NULL,data_shape))
-        target_dataset   = tfdatasets::tensor_slices_dataset(target_data_ph)  %>%
-                              tfdatasets::dataset_shuffle(dim(target_data)[1]) %>%
-                              tfdatasets::dataset_repeat() %>%
-                              tfdatasets::dataset_batch(FLAGS$unsup_batch_size)
-        target_iter      = tfdatasets::make_iterator_initializable(target_dataset)
-        target_batch     = list(tfdatasets::iterator_get_next(target_iter))
+        target_dataset = tf$data$Dataset$from_tensor_slices(target_data_ph)
       }
+      target_dataset = target_dataset$shuffle(dim(target_data)[1])
+      target_dataset = target_dataset$`repeat`()
+      target_dataset = target_dataset$batch(FLAGS$unsup_batch_size)
+      target_iter    = target_dataset$make_initializable_iterator()
+      target_batch   = target_iter$get_next()
+      if(typeof(target_batch) != "list"){target_batch = list(target_batch)}
     })
 
     # Create function that defines the network.
@@ -103,6 +94,12 @@ encoderModel_train_encoder = function(FLAGS, CV, config,
         complexity=3,
         emb_size=FLAGS$emb_size,
         batch_norm=FLAGS$batch_norm)
+
+    ## normalize per batch
+    if(FLAGS$norm == TRUE){
+      source_batch[[1]] = tf$nn$l2_normalize(source_batch[[1]], axis=as.integer(1))
+      target_batch[[1]] = tf$nn$l2_normalize(target_batch[[1]], axis=as.integer(1))
+    }
 
     ## Define test first, also acts as network initializer.
     ## tf.get_variable() is only called when reuse=FALSE for named/var scopes...
@@ -204,10 +201,12 @@ encoderModel_train_encoder = function(FLAGS, CV, config,
       ## the graph-level seed so that it gets a unique random sequence.
       if(FLAGS$random_seed != 0){tf$set_random_seed(FLAGS$random_seed)}
 
-      if(FLAGS$norm == TRUE){
+      ## Normalize full data matrix
+      if(FLAGS$full_norm == TRUE){
         source_data = sess$run(tf$nn$l2_normalize(source_data, axis=as.integer(1)))
         target_data = sess$run(tf$nn$l2_normalize(target_data, axis=as.integer(1)))
       }
+
       ## Initialize everything
       tf$global_variables_initializer()$run()
       print("Done random initialization")

@@ -4,8 +4,8 @@
 \alias{PlotTSNE}
 \title{Creates tsne plot}
 \usage{
-PlotTSNE(object, data.use, labels.use, cols = NULL, title = "",
-  legend = "none", seed = 1234, ...)
+PlotTSNE(object, data.use, labels.use = "scAlign.labels", cols = NULL,
+  title = "", legend = "none", seed = 1234, ...)
 }
 \arguments{
 \item{object}{scAlign class object with aligned data}
@@ -49,33 +49,39 @@ ctrl.data = data[,which(age == "young")]
 stim.data = data[,which(age == "old")]
 
 ctrl = CreateSeuratObject(raw.data = ctrl.data, project = "MOUSE_AGE", min.cells = 0)
-ctrl@meta.data$stim  = "YOUNG"
-ctrl@meta.data$label = labels[which(age == "young")]
+ctrl <- AddMetaData(object = ctrl,
+                    metadata = "YOUNG",
+                    col.name = "stim")
+ctrl <- AddMetaData(object = ctrl,
+                    metadata = cell_type[which(cell_age == "young")],
+                    col.name = "label")
 ctrl = ScaleData(ctrl, do.scale=TRUE, do.center=TRUE, scale.max=50, display.progress = TRUE)
 
 stim = CreateSeuratObject(raw.data = stim.data, project = "MOUSE_AGE", min.cells = 0)
-stim@meta.data$stim = "OLD"
-stim@meta.data$label = labels[which(age == "old")]
+stim <- AddMetaData(object = stim,
+                    metadata = "OLD",
+                    col.name = "stim")
+stim <- AddMetaData(object = stim,
+                    metadata = cell_type[which(cell_age == "old")],
+                    col.name = "label")
 stim = ScaleData(stim, do.scale=TRUE, do.center=TRUE, scale.max=50, display.progress = TRUE)
 
 ## Build the SCE object for input to scAlign using Seurat preprocessing and variable gene selection
 ctrl.sce <- SingleCellExperiment(
               assays = list(
-                counts = ctrl@raw.data,
-                scale.data = ctrl@scale.data),
-              colData = ctrl@meta.data)
+                counts = t(FetchData(ctrl, vars.all=rownames(data), use.raw=TRUE)),
+                scale.data = t(FetchData(ctrl, vars.all=rownames(data), use.scaled=TRUE)))
 
 stim.sce <- SingleCellExperiment(
               assays = list(
-                counts = stim@raw.data,
-                scale.data = stim@scale.data),
-              colData = stim@meta.data)
+                counts = t(FetchData(stim, vars.all=rownames(data), use.raw=TRUE)),
+                scale.data = t(FetchData(stim, vars.all=rownames(data), use.scaled=TRUE)))
 
 ## Build the scAlign class object and compute PCs
 scAlignHSC = scAlignCreateObject(sce.objects = list("YOUNG"=ctrl.sce,
                                                     "OLD"=stim.sce),
-                                 labels = list(ctrl.sce@colData@listData$label,
-                                               stim.sce@colData@listData$label),
+                                 labels = list(cell_type[which(cell_age == "young")],
+                                               cell_type[which(cell_age == "old")]),
                                  pca.reduce = TRUE,
                                  pcs.compute = 50,
                                  cca.reduce = TRUE,
@@ -84,13 +90,13 @@ scAlignHSC = scAlignCreateObject(sce.objects = list("YOUNG"=ctrl.sce,
 
 ## Run scAlign with high_var_genes
 scAlignHSC = scAlign(scAlignHSC,
-                    options=scAlignOptions(steps=1, log.every=1, early.stop=FALSE, architecture="large"),
-                    encoder.data="scale.data",
-                    supervised='none',
-                    run.encoder=TRUE,
-                    run.decoder=TRUE,
-                    log.results=FALSE,
-                    device="CPU")
+                   options=scAlignOptions(steps=5000, log.every=1000, norm=TRUE, early.stop=TRUE),
+                   encoder.data="scale.data",
+                   supervised='none',
+                   run.encoder=TRUE,
+                   run.decoder=FALSE,
+                   log.dir=file.path(results.dir, 'models','gene_input'),
+                   device="CPU")
 
 ## Plot alignment for 3 input types
 example_plot = PlotTSNE(scAlignHSC, "ALIGNED-GENE", "labels", title="scAlign-Gene", perplexity=30)

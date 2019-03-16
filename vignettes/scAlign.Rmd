@@ -67,6 +67,7 @@ First, we load in the normalized cellbench data. The data was normalized followi
 ```{r}
 library(scAlign)
 library(SingleCellExperiment)
+library(ggplot2)
 library(gridExtra)
 
 ## Load in cellbench data
@@ -154,17 +155,10 @@ cca_plot = PlotTSNE(scAlignCB,
                     "ALIGNED-CCA",
                     title="scAlign-CCA",
                     perplexity=30)
-legend = get_legend(PlotTSNE(scAlignCB,
-                             "ALIGNED-GENE",
-                             title="scAlign-Gene",
-                             legend="right",
-                             max_iter=1))
 
-multi_plot_labels = grid.arrange(gene_plot, cca_plot, legend,
+multi_plot_labels = grid.arrange(gene_plot, cca_plot,
                                  nrow = 1,
                                  layout_matrix=cbind(1,1,1,2,2,2,3))
-
-ggsave(multi_plot_labels, file="~/cb_label.png", height=7, width=21)
 ```
 
 # Session Info

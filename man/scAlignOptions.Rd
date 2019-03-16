@@ -6,8 +6,8 @@
 \usage{
 scAlignOptions(steps = 15000, batch.size = 150,
   learning.rate = 1e-04, log.every = 5000, architecture = "small",
-  num.dim = 32, perplexity = 30, norm = TRUE, early.stop = TRUE,
-  seed = 1234)
+  num.dim = 32, perplexity = 30, norm = TRUE, full_norm = FALSE,
+  early.stop = TRUE, seed = 1234)
 }
 \arguments{
 \item{steps}{(default: 15000) Number of training iterations for neural networks.}
@@ -24,7 +24,9 @@ scAlignOptions(steps = 15000, batch.size = 150,
 
 \item{perplexity}{(default: 30) Determines the neighborhood size for each sample.}
 
-\item{norm}{(default: TRUE) Normalize the data matrix prior to scAlign.}
+\item{norm}{(default: TRUE) Normalize the data mini batches while training scAlign (repeated).}
+
+\item{full_norm}{(default: FALSE) Normalize the data matrix prior to scAlign (done once).}
 
 \item{early.stop}{(default: TRUE) Early stopping during network training.}
 

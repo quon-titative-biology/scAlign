@@ -5,7 +5,7 @@
 \title{Creates scAlign object}
 \usage{
 scAlignCreateObject(sce.objects, labels = list(), meta.data = NULL,
-  pca.reduce = TRUE, pcs.compute = 50, cca.reduce = TRUE,
+  pca.reduce = TRUE, pcs.compute = 20, cca.reduce = TRUE,
   ccs.compute = 15, data.use = "scale.data",
   project.name = "scAlignProject")
 }
@@ -24,7 +24,7 @@ scAlignCreateObject(sce.objects, labels = list(), meta.data = NULL,
 
 \item{ccs.compute}{Number of CCs to retrain for alignment.}
 
-\item{data.use}{Specificies which data to use from a Seurat object.}
+\item{data.use}{Specificies which data to use from a Seurat object for dimensionality reduction.}
 
 \item{project.name}{Name for current scAlign project.}
 }
@@ -51,33 +51,27 @@ ctrl.data = data[,which(age == "young")]
 stim.data = data[,which(age == "old")]
 
 ctrl = CreateSeuratObject(raw.data = ctrl.data, project = "MOUSE_AGE", min.cells = 0)
-ctrl@meta.data$stim  = "YOUNG"
-ctrl@meta.data$label = labels[which(age == "young")]
 ctrl = ScaleData(ctrl, do.scale=TRUE, do.center=TRUE, scale.max=50, display.progress = TRUE)
 
 stim = CreateSeuratObject(raw.data = stim.data, project = "MOUSE_AGE", min.cells = 0)
-stim@meta.data$stim = "OLD"
-stim@meta.data$label = labels[which(age == "old")]
 stim = ScaleData(stim, do.scale=TRUE, do.center=TRUE, scale.max=50, display.progress = TRUE)
 
 ## Build the SCE object for input to scAlign using Seurat preprocessing and variable gene selection
 ctrl.sce <- SingleCellExperiment(
               assays = list(
-                counts = ctrl@raw.data,
-                scale.data = ctrl@scale.data),
-              colData = ctrl@meta.data)
+                counts = t(FetchData(ctrl, vars.all=rownames(data), use.raw=TRUE)),
+                scale.data = t(FetchData(ctrl, vars.all=rownames(data), use.scaled=TRUE)))
 
 stim.sce <- SingleCellExperiment(
               assays = list(
-                counts = stim@raw.data,
-                scale.data = stim@scale.data),
-              colData = stim@meta.data)
+                counts = t(FetchData(stim, vars.all=rownames(data), use.raw=TRUE)),
+                scale.data = t(FetchData(stim, vars.all=rownames(data), use.scaled=TRUE)))
 
 ## Build the scAlign class object and compute PCs
 scAlignHSC = scAlignCreateObject(sce.objects = list("YOUNG"=ctrl.sce,
                                                     "OLD"=stim.sce),
-                                 labels = list(ctrl.sce@colData@listData$label,
-                                               stim.sce@colData@listData$label),
+                                 labels = list(cell_type[which(cell_age == "young")],
+                                               cell_type[which(cell_age == "old")]),
                                  pca.reduce = TRUE,
                                  pcs.compute = 50,
                                  cca.reduce = TRUE,

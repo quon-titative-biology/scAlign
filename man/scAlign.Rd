@@ -4,10 +4,10 @@
 \alias{scAlign}
 \title{Run scAlign framework}
 \usage{
-scAlign(sce.object, options = scAlignOptions(),
-  encoder.data = "scale.data", decoder.data = encoder.data,
-  supervised = "none", run.encoder = TRUE, run.decoder = TRUE,
-  log.dir = "./models/", log.results = FALSE, device = "CPU")
+scAlign(sce.object, options = scAlignOptions(), encoder.data,
+  decoder.data = encoder.data, supervised = "none",
+  run.encoder = TRUE, run.decoder = FALSE, log.dir = "./models/",
+  log.results = FALSE, device = "CPU")
 }
 \arguments{
 \item{sce.object}{scAlign object.}
@@ -29,6 +29,8 @@ scAlign(sce.object, options = scAlignOptions(),
 \item{log.results}{Determines if results should be written to log.dir.}
 
 \item{device}{Specify hardware to use.}
+
+\item{full_norm}{}
 }
 \value{
 scAlign class
@@ -53,33 +55,27 @@ ctrl.data = data[,which(age == "young")]
 stim.data = data[,which(age == "old")]
 
 ctrl = CreateSeuratObject(raw.data = ctrl.data, project = "MOUSE_AGE", min.cells = 0)
-ctrl@meta.data$stim  = "YOUNG"
-ctrl@meta.data$label = labels[which(age == "young")]
 ctrl = ScaleData(ctrl, do.scale=TRUE, do.center=TRUE, scale.max=50, display.progress = TRUE)
 
 stim = CreateSeuratObject(raw.data = stim.data, project = "MOUSE_AGE", min.cells = 0)
-stim@meta.data$stim = "OLD"
-stim@meta.data$label = labels[which(age == "old")]
 stim = ScaleData(stim, do.scale=TRUE, do.center=TRUE, scale.max=50, display.progress = TRUE)
 
 ## Build the SCE object for input to scAlign using Seurat preprocessing and variable gene selection
 ctrl.sce <- SingleCellExperiment(
               assays = list(
-                counts = ctrl@raw.data,
-                scale.data = ctrl@scale.data),
-              colData = ctrl@meta.data)
+                counts = t(FetchData(ctrl, vars.all=rownames(data), use.raw=TRUE)),
+                scale.data = t(FetchData(ctrl, vars.all=rownames(data), use.scaled=TRUE)))
 
 stim.sce <- SingleCellExperiment(
               assays = list(
-                counts = stim@raw.data,
-                scale.data = stim@scale.data),
-              colData = stim@meta.data)
+                counts = t(FetchData(stim, vars.all=rownames(data), use.raw=TRUE)),
+                scale.data = t(FetchData(stim, vars.all=rownames(data), use.scaled=TRUE)))
 
 ## Build the scAlign class object and compute PCs
 scAlignHSC = scAlignCreateObject(sce.objects = list("YOUNG"=ctrl.sce,
                                                     "OLD"=stim.sce),
-                                 labels = list(ctrl.sce@colData@listData$label,
-                                               stim.sce@colData@listData$label),
+                                 labels = list(cell_type[which(cell_age == "young")],
+                                               cell_type[which(cell_age == "old")]),
                                  pca.reduce = TRUE,
                                  pcs.compute = 50,
                                  cca.reduce = TRUE,
@@ -88,12 +84,12 @@ scAlignHSC = scAlignCreateObject(sce.objects = list("YOUNG"=ctrl.sce,
 
 ## Run scAlign with high_var_genes
 scAlignHSC = scAlign(scAlignHSC,
-                    options=scAlignOptions(steps=1, log.every=1, early.stop=TRUE, architecture="large"),
-                    encoder.data="scale.data",
-                    supervised='none',
-                    run.encoder=TRUE,
-                    run.decoder=TRUE,
-                    log.results=FALSE,
-                    device="CPU")
+                   options=scAlignOptions(steps=5000, log.every=1000, norm=TRUE, early.stop=TRUE),
+                   encoder.data="scale.data",
+                   supervised='none',
+                   run.encoder=TRUE,
+                   run.decoder=FALSE,
+                   log.dir=file.path(results.dir, 'models','gene_input'),
+                   device="CPU")
 
 }

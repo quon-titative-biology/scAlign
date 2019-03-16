@@ -8,6 +8,23 @@ encoder_medium(inputs, input_size = NULL, complexity = 3,
   emb_size = 32, l2_weight = 1e-04, dropout_rate = 0.3,
   is_training = TRUE, batch_norm = TRUE)
 }
+\arguments{
+\item{inputs}{Mini-batch placeholder}
+
+\item{input_size}{Number of features per cell}
+
+\item{complexity}{Determines the depth and width of an automatically created network}
+
+\item{emb_size}{Number of hidden nodes in final (embedding) hidden layer}
+
+\item{l2_weight}{Weight on l2_regularizer}
+
+\item{dropout_rate}{Probability for dropout.}
+
+\item{is_training}{Determines if dropout and batch norm should be include in pass through network}
+
+\item{batch_norm}{Determines if batch normalization layers should be included}
+}
 \value{
 Neural network graph op
 }

@@ -14,18 +14,25 @@ vignette: >
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-# Tutorial: Alignment of C57BL/6 hemoteopietic stem cells (HSCs) from young and old mice from Kowalcyzk et al.
+# Introduction
 
-This tutorial provides a guided alignment for two groups of cells from [Kowalczyk et al, 2015](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4665007/). In this experiment, single cell RNA (scRNA) sequencing profiles were generated from HSCs in young (2-3 mo) and old (>22 mo) C57BL/6 mice. Age related expression programs make a joint analysis of three isolated cell types long-term (LT), short-term (ST) and  multipotent progenitors (MPPs). In this tutorial we demonstrate the unsupervised alignment strategy of scAlign described in [Johansen et al, 2018](https://www.biorxiv.org/content/10.1101/504944v2) along with typical analysis utilizing the aligned dataset, and show how scAlign can identify and match cell types across age without using the labels as input.
+This tutorial provides a guided alignment for two groups of cells from [cellbench](https://github.com/LuyiTian/CellBench_data/blob/master/cellbench.md) RNA mixture experiments. In this tutorial we demonstrate the unsupervised alignment strategy of `scAlign` described in [Johansen et al, 2018](https://www.biorxiv.org/content/10.1101/504944v2) along with typical analysis utilizing the aligned dataset, and show how `scAlign` can identify and match cell types across platforms without using the labels as input.
 
 ## Alignment goals
-The following is a walkthrough of a typical alignment problem for scAlign and has been designed to provide an overview of data preprocessing, alignment and finally analysis in our joint embedding space. Here, our primary goals include:
+The following is a walkthrough of a typical alignment problem for `scAlign` and has been designed to provide an overview of data preprocessing, alignment and finally analysis in our joint embedding space. Here, our primary goals include:
 
-1. Learning a low-dimensional cell state space in which cells group by function and type, regardless of condition (age).
+1. Learning a low-dimensional cell state space in which cells group by function and type, regardless of condition (platform).
 2. Accurately labeling old cells with cell cycle and cell type information using only the young cell annotations.
 
 ## Installation
 
+```R
+if (!requireNamespace("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+BiocManager::install("scAlign")
+```
+
+```
 Guide to installing python and tensorflow on different operating systems.
 
 On Windows:
@@ -50,139 +57,114 @@ pip3 install --user --upgrade tensorflow # install in $HOME
 python3 -c "import tensorflow as tf; tf.enable_eager_execution(); print(tf.reduce_sum(tf.random_normal([1000, 1000])))"
 
 Further details at: https://www.tensorflow.org/install
+```
 
 ## Data setup
-The gene count matrices used for this tutorial are hosted [here](https://github.com/quon-titative-biology/data/blob/master/kowalcyzk_gene_counts.rda).
+The gene count matrices used for this tutorial are hosted on the cellbench github: [here](https://github.com/LuyiTian/CellBench_data/tree/master/data).
 
-First, we perform a typical scRNA preprocessing step using the Seurat package. Then, reduce to the top 3,000 highly variable genes from both datasets to improve convergence and reduce computation time.
+First, we load in the normalized cellbench data. The data was normalized following the procedures defined on the cellbench github.
 
-```R
+```{r}
 library(scAlign)
 library(SingleCellExperiment)
-library(Seurat)
 library(gridExtra)
 
-working.dir = "." #where our data file, kowalcyzk_gene_counts.rda is located
-results.dir = "." #where the output should be stored
+## Load in cellbench data
+data("cellbench", package = "scAlign", envir = environment()
 
-## Load in data
-load(file.path(working.dir, 'kowalcyzk_gene_counts.rda'))
-
-## Extract age and cell type labels
-cell_age = unlist(lapply(strsplit(colnames(C57BL6_mouse_data), "_"), "[[", 1))
-cell_type = gsub('HSC', '', unlist(lapply(strsplit(colnames(C57BL6_mouse_data), "_"), "[[", 2)))
-
-## Separate young and old data
-young_data = C57BL6_mouse_data[unique(row.names(C57BL6_mouse_data)),which(cell_age == "young")]
-old_data   = C57BL6_mouse_data[unique(row.names(C57BL6_mouse_data)),which(cell_age == "old")]
-
-## Set up young mouse Seurat object
-youngMouseSeuratObj <- CreateSeuratObject(raw.data = young_data, project = "MOUSE_AGE", min.cells = 0)
-youngMouseSeuratObj <- FilterCells(youngMouseSeuratObj, subset.names = "nGene", low.thresholds = 100, high.thresholds = Inf)
-youngMouseSeuratObj <- NormalizeData(youngMouseSeuratObj)
-youngMouseSeuratObj <- ScaleData(youngMouseSeuratObj, do.scale=T, do.center=T, display.progress = T)
-
-## Set up old mouse Seurat object
-oldMouseSeuratObj <- CreateSeuratObject(raw.data = old_data, project = "MOUSE_AGE", min.cells = 0)
-oldMouseSeuratObj <- FilterCells(oldMouseSeuratObj, subset.names = "nGene", low.thresholds = 100, high.thresholds = Inf)
-oldMouseSeuratObj <- NormalizeData(oldMouseSeuratObj)
-oldMouseSeuratObj <- ScaleData(oldMouseSeuratObj, do.scale=T, do.center=T, display.progress = T)
+## Extract RNA mixture cell types
+mix.types = unlist(lapply(strsplit(colnames(cellbench), "-"), "[[", 2))
+## Extract Platform
+batch = c(rep("CEL", length(which(!grepl("sortseq", colnames(cellbench)) == TRUE))),
+          rep("SORT", length(which(grepl("sortseq", colnames(cellbench)) == TRUE))))
 ```
 
 ## scAlign setup
 The general design of scAlign's makes it agnostic to the input RNA-seq data representation. Thus, the input data can either be
 gene-level counts, transformations of those gene level counts or a preliminary step of dimensionality reduction such
-as canonical correlates or principal component scores. Here we create the scAlign object from the previously defined
-Seurat objects and perform both PCA and CCA on the unaligned data.
+as canonical correlates or principal component scores. Here we create the `scAlign` object from the previously normalized cellbench
+data and perform CCA on the unaligned data.
 
-```R
+```{r}
 ## Create SCE objects to pass into scAlignCreateObject
 youngMouseSCE <- SingleCellExperiment(
-    assays = list(counts = t(FetchData(youngMouseSeuratObj, vars.all=rownames(young_data), use.raw=TRUE)),
-                  scale.data = t(FetchData(youngMouseSeuratObj, vars.all=rownames(young_data), use.scaled=TRUE)))
+    assays = list(scale.data = cellbench[,batch=='CEL'])
 )
 
 oldMouseSCE <- SingleCellExperiment(
-    assays = list(counts = t(FetchData(oldMouseSeuratObj, vars.all=rownames(old_data), use.raw=TRUE)),
-                  scale.data = t(FetchData(oldMouseSeuratObj, vars.all=rownames(old_data), use.scaled=TRUE)))
+    assays = list(scale.data = cellbench[,batch=='SORT'])
 )
 
 ## Build the scAlign class object and compute PCs
-scAlignHSC = scAlignCreateObject(sce.objects = list("YOUNG"=youngMouseSCE, "OLD"=oldMouseSCE),
-                                 labels = list(cell_type[which(cell_age == "young")], cell_type[which(cell_age == "old")]),
+scAlignCB = scAlignCreateObject(sce.objects = list("CEL"=youngMouseSCE,
+                                                   "SORT"=oldMouseSCE),
+                                 labels = list(mix.types[batch=='CEL'],
+                                               mix.types[batch=='SORT']),
                                  data.use="scale.data",
-                                 pca.reduce = TRUE,
-                                 pcs.compute = 50,
+                                 pca.reduce = FALSE,
                                  cca.reduce = TRUE,
-                                 ccs.compute = 15,
-                                 project.name = "scAlign_Kowalcyzk_HSC")
+                                 ccs.compute = 5,
+                                 project.name = "scAlign_cellbench")
 ```
 
-## Alignment of young and old HSCs
-Now we align the young and old cpopulations. scAlign returns a low-dimensional joint embedding space where the effect of age is
-removed allowing us to use the complete dataset for downstream analyses such as clustering or differential expression.
+## Alignment of cellbench RNAmixture
+Now we align the cell populations from both protocols. `scAlign` returns a low-dimensional joint embedding space where
+the effect of platform is removed allowing us to use the complete dataset for downstream analyses such as clustering or
+differential expression.
 
-```R
+```{r}
 ## Run scAlign with all_genes
-scAlignHSC = scAlign(scAlignHSC,
-                    options=scAlignOptions(steps=5000, log.every=1000, norm=TRUE, early.stop=TRUE),
+scAlignCB = scAlign(scAlignCB,
+                    options=scAlignOptions(steps=5000,
+                                           log.every=1000,
+                                           norm=TRUE,
+                                           early.stop=TRUE),
                     encoder.data="scale.data",
                     supervised='none',
                     run.encoder=TRUE,
                     run.decoder=TRUE,
-                    log.dir=file.path(results.dir, 'models','gene_input'),
-                    device="CPU")
-
-## Additional run of scAlign with PCA
-scAlignHSC = scAlign(scAlignHSC,
-                    options=scAlignOptions(steps=15000, log.every=1000, norm=TRUE, early.stop=FALSE),
-                    encoder.data="PCA",
-                    supervised='none',
-                    run.encoder=TRUE,
-                    run.decoder=FALSE,
-                    log.dir=file.path(results.dir, 'models','pca_input'),
+                    log.dir=file.path('~/models_temp','gene_input'),
                     device="CPU")
 
 ## Additional run of scAlign with CCA
-scAlignHSC = scAlign(scAlignHSC,
-                    options=scAlignOptions(steps=5000, log.every=1000, norm=TRUE, early.stop=TRUE),
+scAlignCB = scAlign(scAlignCB,
+                    options=scAlignOptions(steps=5000,
+                                           log.every=1000,
+                                           norm=TRUE,
+                                           early.stop=TRUE),
                     encoder.data="CCA",
                     supervised='none',
                     run.encoder=TRUE,
                     run.decoder=FALSE,
-                    log.dir=file.path(results.dir, 'models','cca_input'),
+                    log.dir=file.path('~/models','cca_input'),
                     device="CPU")
 
 ## Plot aligned data in tSNE space, when the data was processed in three different ways:
 ##   1) either using the original gene inputs,
-##   2) after PCA dimensionality reduction for preprocessing, or
-##   3) after CCA dimensionality reduction for preprocessing.
+##   2) after CCA dimensionality reduction for preprocessing.
 ##   Cells here are colored by input labels
 
 set.seed(5678)
-gene_plot = PlotTSNE(scAlignHSC, "ALIGNED-GENE", title="scAlign-Gene", perplexity=30)
-pca_plot = PlotTSNE(scAlignHSC, "ALIGNED-PCA", title="scAlign-PCA", perplexity=30)
-cca_plot = PlotTSNE(scAlignHSC, "ALIGNED-CCA", title="scAlign-CCA", perplexity=30)
-legend = get_legend(PlotTSNE(scAlignHSC, "ALIGNED-GENE", title="scAlign-Gene", legend="right", max_iter=1))
+gene_plot = PlotTSNE(scAlignCB,
+                     "ALIGNED-GENE",
+                     title="scAlign-Gene",
+                     perplexity=30)
 
-multi_plot_labels = grid.arrange(gene_plot, pca_plot, cca_plot,
-                                 legend,
+cca_plot = PlotTSNE(scAlignCB,
+                    "ALIGNED-CCA",
+                    title="scAlign-CCA",
+                    perplexity=30)
+legend = get_legend(PlotTSNE(scAlignCB,
+                             "ALIGNED-GENE",
+                             title="scAlign-Gene",
+                             legend="right",
+                             max_iter=1))
+
+multi_plot_labels = grid.arrange(gene_plot, cca_plot, legend,
                                  nrow = 1,
-                                 layout_matrix=cbind(1,1,1,2,2,2,3,3,3,4)),
-      file=file.path('~/combined_plot_alignment_colorby_label.png'), height=12, width=36)
+                                 layout_matrix=cbind(1,1,1,2,2,2,3))
 
-## Plot alignment for 3 input types
-set.seed(5678)
-gene_plot = PlotTSNE(scAlignHSC, "ALIGNED-GENE", title="scAlign-Gene", cols=c("red","blue"), labels.use="group.by", perplexity=30)
-pca_plot = PlotTSNE(scAlignHSC, "ALIGNED-PCA", title="scAlign-PCA", cols=c("red","blue"), labels.use="group.by", perplexity=30)
-cca_plot = PlotTSNE(scAlignHSC, "ALIGNED-CCA", title="scAlign-CCA", cols=c("red","blue"), labels.use="group.by", perplexity=30)
-legend = get_legend(PlotTSNE(scAlignHSC, "ALIGNED-GENE", title="scAlign-Gene", cols=c("red","blue"), labels.use="group.by", legend="right", max_iter=1))
-
-multi_plot_dataset = grid.arrange(gene_plot, pca_plot, cca_plot,
-                                  legend,
-                                  nrow = 1,
-                                  layout_matrix=cbind(1,1,1,2,2,2,3,3,3,4)),
-      file=file.path('~/combined_plot_alignment_colorby_dataset.png'), height=12, width=36)
+ggsave(multi_plot_labels, file="~/cb_label.png", height=7, width=21)
 ```
 
 # Session Info

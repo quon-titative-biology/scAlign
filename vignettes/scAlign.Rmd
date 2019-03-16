@@ -70,7 +70,7 @@ library(SingleCellExperiment)
 library(gridExtra)
 
 ## Load in cellbench data
-data("cellbench", package = "scAlign", envir = environment()
+data("cellbench", package = "scAlign", envir = environment())
 
 ## Extract RNA mixture cell types
 mix.types = unlist(lapply(strsplit(colnames(cellbench), "-"), "[[", 2))

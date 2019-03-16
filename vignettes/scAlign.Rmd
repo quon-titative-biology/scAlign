@@ -116,29 +116,29 @@ differential expression.
 ```{r}
 ## Run scAlign with all_genes
 scAlignCB = scAlign(scAlignCB,
-                    options=scAlignOptions(steps=100,
-                                           log.every=100,
+                    options=scAlignOptions(steps=1000,
+                                           log.every=1000,
                                            norm=TRUE,
                                            early.stop=TRUE),
                     encoder.data="scale.data",
                     supervised='none',
                     run.encoder=TRUE,
-                    run.decoder=TRUE,
+                    run.decoder=FALSE,
                     log.dir=file.path('~/models_temp','gene_input'),
                     device="CPU")
 
-## Additional run of scAlign with CCA
-scAlignCB = scAlign(scAlignCB,
-                    options=scAlignOptions(steps=100,
-                                           log.every=100,
-                                           norm=TRUE,
-                                           early.stop=TRUE),
-                    encoder.data="CCA",
-                    supervised='none',
-                    run.encoder=TRUE,
-                    run.decoder=FALSE,
-                    log.dir=file.path('~/models','cca_input'),
-                    device="CPU")
+# ## Additional run of scAlign with CCA
+# scAlignCB = scAlign(scAlignCB,
+#                     options=scAlignOptions(steps=1000,
+#                                            log.every=1000,
+#                                            norm=TRUE,
+#                                            early.stop=TRUE),
+#                     encoder.data="CCA",
+#                     supervised='none',
+#                     run.encoder=TRUE,
+#                     run.decoder=FALSE,
+#                     log.dir=file.path('~/models','cca_input'),
+#                     device="CPU")
 
 ## Plot aligned data in tSNE space, when the data was processed in three different ways:
 ##   1) either using the original gene inputs,
@@ -151,14 +151,14 @@ gene_plot = PlotTSNE(scAlignCB,
                      title="scAlign-Gene",
                      perplexity=30)
 
-cca_plot = PlotTSNE(scAlignCB,
-                    "ALIGNED-CCA",
-                    title="scAlign-CCA",
-                    perplexity=30)
-
-multi_plot_labels = grid.arrange(gene_plot, cca_plot,
-                                 nrow = 1,
-                                 layout_matrix=cbind(1,1,1,2,2,2,3))
+# cca_plot = PlotTSNE(scAlignCB,
+#                     "ALIGNED-CCA",
+#                     title="scAlign-CCA",
+#                     perplexity=30)
+#
+# multi_plot_labels = grid.arrange(gene_plot, cca_plot,
+#                                  nrow = 1,
+#                                  layout_matrix=cbind(1,1,1,2,2,2))
 ```
 
 # Session Info

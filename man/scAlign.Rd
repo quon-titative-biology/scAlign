@@ -29,8 +29,6 @@ scAlign(sce.object, options = scAlignOptions(), encoder.data,
 \item{log.results}{Determines if results should be written to log.dir.}
 
 \item{device}{Specify hardware to use.}
-
-\item{full_norm}{}
 }
 \value{
 scAlign class
@@ -61,21 +59,21 @@ stim = CreateSeuratObject(raw.data = stim.data, project = "MOUSE_AGE", min.cells
 stim = ScaleData(stim, do.scale=TRUE, do.center=TRUE, scale.max=50, display.progress = TRUE)
 
 ## Build the SCE object for input to scAlign using Seurat preprocessing and variable gene selection
-ctrl.sce <- SingleCellExperiment(
+ctrlSCE <- SingleCellExperiment(
               assays = list(
                 counts = t(FetchData(ctrl, vars.all=rownames(data), use.raw=TRUE)),
-                scale.data = t(FetchData(ctrl, vars.all=rownames(data), use.scaled=TRUE)))
+                scale.data = t(FetchData(ctrl, vars.all=rownames(data), use.scaled=TRUE))))
 
-stim.sce <- SingleCellExperiment(
+stimSCE <- SingleCellExperiment(
               assays = list(
                 counts = t(FetchData(stim, vars.all=rownames(data), use.raw=TRUE)),
-                scale.data = t(FetchData(stim, vars.all=rownames(data), use.scaled=TRUE)))
+                scale.data = t(FetchData(stim, vars.all=rownames(data), use.scaled=TRUE))))
 
 ## Build the scAlign class object and compute PCs
-scAlignHSC = scAlignCreateObject(sce.objects = list("YOUNG"=ctrl.sce,
-                                                    "OLD"=stim.sce),
-                                 labels = list(cell_type[which(cell_age == "young")],
-                                               cell_type[which(cell_age == "old")]),
+scAlignHSC = scAlignCreateObject(sce.objects = list("YOUNG"=ctrlSCE,
+                                                    "OLD"=stimSCE),
+                                 labels = list(labels[which(age == "young")],
+                                               labels[which(age == "old")]),
                                  pca.reduce = TRUE,
                                  pcs.compute = 50,
                                  cca.reduce = TRUE,
@@ -84,12 +82,12 @@ scAlignHSC = scAlignCreateObject(sce.objects = list("YOUNG"=ctrl.sce,
 
 ## Run scAlign with high_var_genes
 scAlignHSC = scAlign(scAlignHSC,
-                   options=scAlignOptions(steps=5000, log.every=1000, norm=TRUE, early.stop=TRUE),
+                   options=scAlignOptions(steps=1000, log.every=1000, norm=TRUE, early.stop=TRUE),
                    encoder.data="scale.data",
                    supervised='none',
                    run.encoder=TRUE,
                    run.decoder=FALSE,
-                   log.dir=file.path(results.dir, 'models','gene_input'),
+                   log.dir=file.path('~/models','gene_input'),
                    device="CPU")
 
 }

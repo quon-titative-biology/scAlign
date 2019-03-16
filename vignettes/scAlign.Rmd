@@ -116,8 +116,8 @@ differential expression.
 ```{r}
 ## Run scAlign with all_genes
 scAlignCB = scAlign(scAlignCB,
-                    options=scAlignOptions(steps=5000,
-                                           log.every=1000,
+                    options=scAlignOptions(steps=100,
+                                           log.every=100,
                                            norm=TRUE,
                                            early.stop=TRUE),
                     encoder.data="scale.data",
@@ -129,8 +129,8 @@ scAlignCB = scAlign(scAlignCB,
 
 ## Additional run of scAlign with CCA
 scAlignCB = scAlign(scAlignCB,
-                    options=scAlignOptions(steps=5000,
-                                           log.every=1000,
+                    options=scAlignOptions(steps=100,
+                                           log.every=100,
                                            norm=TRUE,
                                            early.stop=TRUE),
                     encoder.data="CCA",

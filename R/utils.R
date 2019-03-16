@@ -34,39 +34,27 @@
 #' stim.data = data[,which(age == "old")]
 #'
 #' ctrl = CreateSeuratObject(raw.data = ctrl.data, project = "MOUSE_AGE", min.cells = 0)
-#' ctrl <- AddMetaData(object = ctrl,
-#'                     metadata = "YOUNG",
-#'                     col.name = "stim")
-#' ctrl <- AddMetaData(object = ctrl,
-#'                     metadata = cell_type[which(cell_age == "young")],
-#'                     col.name = "label")
 #' ctrl = ScaleData(ctrl, do.scale=TRUE, do.center=TRUE, scale.max=50, display.progress = TRUE)
 #'
 #' stim = CreateSeuratObject(raw.data = stim.data, project = "MOUSE_AGE", min.cells = 0)
-#' stim <- AddMetaData(object = stim,
-#'                     metadata = "OLD",
-#'                     col.name = "stim")
-#' stim <- AddMetaData(object = stim,
-#'                     metadata = cell_type[which(cell_age == "old")],
-#'                     col.name = "label")
 #' stim = ScaleData(stim, do.scale=TRUE, do.center=TRUE, scale.max=50, display.progress = TRUE)
 #'
 #' ## Build the SCE object for input to scAlign using Seurat preprocessing and variable gene selection
-#' ctrl.sce <- SingleCellExperiment(
+#' ctrlSCE <- SingleCellExperiment(
 #'               assays = list(
 #'                 counts = t(FetchData(ctrl, vars.all=rownames(data), use.raw=TRUE)),
-#'                 scale.data = t(FetchData(ctrl, vars.all=rownames(data), use.scaled=TRUE)))
+#'                 scale.data = t(FetchData(ctrl, vars.all=rownames(data), use.scaled=TRUE))))
 #'
-#' stim.sce <- SingleCellExperiment(
+#' stimSCE <- SingleCellExperiment(
 #'               assays = list(
 #'                 counts = t(FetchData(stim, vars.all=rownames(data), use.raw=TRUE)),
-#'                 scale.data = t(FetchData(stim, vars.all=rownames(data), use.scaled=TRUE)))
+#'                 scale.data = t(FetchData(stim, vars.all=rownames(data), use.scaled=TRUE))))
 #'
 #' ## Build the scAlign class object and compute PCs
-#' scAlignHSC = scAlignCreateObject(sce.objects = list("YOUNG"=ctrl.sce,
-#'                                                     "OLD"=stim.sce),
-#'                                  labels = list(cell_type[which(cell_age == "young")],
-#'                                                cell_type[which(cell_age == "old")]),
+#' scAlignHSC = scAlignCreateObject(sce.objects = list("YOUNG"=ctrlSCE,
+#'                                                     "OLD"=stimSCE),
+#'                                  labels = list(labels[which(age == "young")],
+#'                                                labels[which(age == "old")]),
 #'                                  pca.reduce = TRUE,
 #'                                  pcs.compute = 50,
 #'                                  cca.reduce = TRUE,
@@ -80,7 +68,7 @@
 #'                    supervised='none',
 #'                    run.encoder=TRUE,
 #'                    run.decoder=FALSE,
-#'                    log.dir=file.path(results.dir, 'models','gene_input'),
+#'                    log.dir=file.path('~/models','gene_input'),
 #'                    device="CPU")
 #'
 #' ## Plot alignment for 3 input types

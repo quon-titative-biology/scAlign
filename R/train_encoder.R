@@ -12,7 +12,6 @@
 #' @param diag indicator for self similarity
 #'
 #' @import tensorflow
-#' @import tfdatasets
 #'
 #' @keywords internal
 define_kernel_matrix = function(method, data=NULL, labels=NULL, data_shape, perplexity=NULL, diag="zero"){

@@ -76,8 +76,8 @@ test_that("Alignment produces consistent results", {
 
    ## Run scAlign with all_genes
    scAlignCB = scAlign(scAlignCB,
-                       options=scAlignOptions(steps=2500,
-                                              log.every=2500,
+                       options=scAlignOptions(steps=1000,
+                                              log.every=1000,
                                               norm=TRUE,
                                               early.stop=TRUE),
                        encoder.data="scale.data",

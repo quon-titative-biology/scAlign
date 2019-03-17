@@ -62,7 +62,7 @@
 #'
 #' ## Run scAlign with high_var_genes
 #' scAlignHSC = scAlign(scAlignHSC,
-#'                    options=scAlignOptions(steps=1000, log.every=1000, norm=TRUE, early.stop=TRUE),
+#'                    options=scAlignOptions(steps=100, log.every=100, norm=TRUE, early.stop=FALSE),
 #'                    encoder.data="scale.data",
 #'                    supervised='none',
 #'                    run.encoder=TRUE,

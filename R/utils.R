@@ -63,7 +63,7 @@
 #'
 #' ## Run scAlign with high_var_genes
 #' scAlignHSC = scAlign(scAlignHSC,
-#'                    options=scAlignOptions(steps=1000, log.every=1000, norm=TRUE, early.stop=TRUE),
+#'                    options=scAlignOptions(steps=100, log.every=100, norm=TRUE, early.stop=FALSE),
 #'                    encoder.data="scale.data",
 #'                    supervised='none',
 #'                    run.encoder=TRUE,
@@ -204,8 +204,8 @@ PlotTSNE = function(object, data.use, labels.use="scAlign.labels", cols=NULL, ti
     stop("Incorrect minibatch_size, must not be greater than combined number of samples or less than 1.")
   }
 
-  if(options[,"steps"] < 1000){
-    print("Training steps should be at least 1000.")
+  if(options[,"steps"] < 100){
+    print("Training steps should be at least 100.")
   }
 
   if(options[,"log.every"] > options[,"steps"]){
@@ -253,7 +253,7 @@ PlotTSNE = function(object, data.use, labels.use="scAlign.labels", cols=NULL, ti
 .early_stop = function(loss_tracker, step, patience_count, early_stopping_active, patience=30, min_delta=0.01){
   ## Early stopping enabled steps exceeds patience
   if(step > early_stopping_active){
-    loss_avg = mean(loss_tracker[(length(loss_tracker)-100):(length(loss_tracker)-1)])
+    loss_avg = mean(loss_tracker[(length(loss_tracker)-50):(length(loss_tracker)-1)])
     if(abs((loss_avg - loss_tracker[length(loss_tracker)])/((loss_avg + loss_tracker[length(loss_tracker)])/2.0)) > min_delta){
       patience_count = 0
     }else{

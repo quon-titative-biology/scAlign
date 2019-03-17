@@ -68,7 +68,6 @@ First, we load in the normalized cellbench data. The data was normalized followi
 library(scAlign)
 library(SingleCellExperiment)
 library(ggplot2)
-library(gridExtra)
 
 ## Load in cellbench data
 data("cellbench", package = "scAlign", envir = environment())

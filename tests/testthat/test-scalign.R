@@ -43,7 +43,6 @@ test_that("Alignment produces consistent results", {
   library(SingleCellExperiment)
   library(class)
   library(ggplot2)
-  library(gridExtra)
 
   ## Load in cellbench data
   data("cellbench", package = "scAlign", envir = environment())
@@ -76,10 +75,10 @@ test_that("Alignment produces consistent results", {
 
    ## Run scAlign with all_genes
    scAlignCB = scAlign(scAlignCB,
-                       options=scAlignOptions(steps=1000,
-                                              log.every=1000,
+                       options=scAlignOptions(steps=500,
+                                              log.every=500,
                                               norm=TRUE,
-                                              early.stop=TRUE),
+                                              early.stop=FALSE),
                        encoder.data="scale.data",
                        supervised='none',
                        run.encoder=TRUE,

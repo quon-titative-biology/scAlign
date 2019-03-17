@@ -40,77 +40,59 @@ test_that("scAlign object creator halts on none SCE input", {
 test_that("Alignment produces consistent results", {
 
   library(scAlign)
-  library(Seurat)
   library(SingleCellExperiment)
   library(class)
+  library(ggplot2)
+  library(gridExtra)
 
-  working.dir = "/home/ucdnjj/lab-data/hsc-age" #where our data file, kowalcyzk_gene_counts.rda is located
-  results.dir = "/home/ucdnjj/lab-results"      #where the output should be stored
+  ## Load in cellbench data
+  data("cellbench", package = "scAlign", envir = environment())
 
-  ## Load in data
-  load(file.path(working.dir, 'kowalcyzk_gene_counts.rda'))
-
-  ## Extract age and cell type labels
-  cell_age = unlist(lapply(strsplit(colnames(C57BL6_mouse_data), "_"), "[[", 1))
-  cell_type = gsub('HSC', '', unlist(lapply(strsplit(colnames(C57BL6_mouse_data), "_"), "[[", 2)))
-
-  ## Separate young and old data
-  young_data = C57BL6_mouse_data[unique(row.names(C57BL6_mouse_data)),which(cell_age == "young")]
-  old_data   = C57BL6_mouse_data[unique(row.names(C57BL6_mouse_data)),which(cell_age == "old")]
-
-  ## Set up young mouse Seurat object
-  youngMouseSeuratObj <- CreateSeuratObject(raw.data = young_data, project = "MOUSE_AGE", min.cells = 0)
-  youngMouseSeuratObj <- FilterCells(youngMouseSeuratObj, subset.names = "nGene", low.thresholds = 100, high.thresholds = Inf)
-  youngMouseSeuratObj <- NormalizeData(youngMouseSeuratObj)
-  youngMouseSeuratObj <- ScaleData(youngMouseSeuratObj, do.scale=TRUE, do.center=TRUE, display.progress = TRUE)
-
-  ## Set up old mouse Seurat object
-  oldMouseSeuratObj <- CreateSeuratObject(raw.data = old_data, project = "MOUSE_AGE", min.cells = 0)
-  oldMouseSeuratObj <- FilterCells(oldMouseSeuratObj, subset.names = "nGene", low.thresholds = 100, high.thresholds = Inf)
-  oldMouseSeuratObj <- NormalizeData(oldMouseSeuratObj)
-  oldMouseSeuratObj <- ScaleData(oldMouseSeuratObj, do.scale=TRUE, do.center=TRUE, display.progress = TRUE)
+  ## Extract RNA mixture cell types
+  mix.types = unlist(lapply(strsplit(colnames(cellbench), "-"), "[[", 2))
+  ## Extract Platform
+  batch = c(rep("CEL", length(which(!grepl("sortseq", colnames(cellbench)) == TRUE))),
+            rep("SORT", length(which(grepl("sortseq", colnames(cellbench)) == TRUE))))
 
   ## Create SCE objects to pass into scAlignCreateObject
   youngMouseSCE <- SingleCellExperiment(
-      assays = list(counts = t(FetchData(youngMouseSeuratObj, vars.all=rownames(young_data), use.raw=TRUE)),
-                    scale.data = t(FetchData(youngMouseSeuratObj, vars.all=rownames(young_data), use.scaled=TRUE)))
+      assays = list(scale.data = cellbench[,batch=='CEL'])
   )
 
   oldMouseSCE <- SingleCellExperiment(
-      assays = list(counts = t(FetchData(oldMouseSeuratObj, vars.all=rownames(old_data), use.raw=TRUE)),
-                    scale.data = t(FetchData(oldMouseSeuratObj, vars.all=rownames(old_data), use.scaled=TRUE)))
+      assays = list(scale.data = cellbench[,batch=='SORT'])
   )
 
   ## Build the scAlign class object and compute PCs
-  scAlignHSC = scAlignCreateObject(sce.objects = list("YOUNG"=youngMouseSCE, "OLD"=oldMouseSCE),
-                                   labels = list(cell_type[which(cell_age == "young")], cell_type[which(cell_age == "old")]),
+  scAlignCB = scAlignCreateObject(sce.objects = list("CEL"=youngMouseSCE,
+                                                     "SORT"=oldMouseSCE),
+                                   labels = list(mix.types[batch=='CEL'],
+                                                 mix.types[batch=='SORT']),
                                    data.use="scale.data",
-                                   pca.reduce = TRUE,
-                                   pcs.compute = 50,
+                                   pca.reduce = FALSE,
                                    cca.reduce = TRUE,
-                                   ccs.compute = 15,
-                                   project.name = "scAlign_Kowalcyzk_HSC")
+                                   ccs.compute = 5,
+                                   project.name = "scAlign_cellbench")
 
-
-  ## View SCE object
-  print(scAlignHSC)
-
-  ## Run scAlign with high_var_genes
-  scAlignHSC = scAlign(scAlignHSC,
-                       options=scAlignOptions(steps=1000, log.every=1000, norm=TRUE, early.stop=TRUE),
+   ## Run scAlign with all_genes
+   scAlignCB = scAlign(scAlignCB,
+                       options=scAlignOptions(steps=2500,
+                                              log.every=2500,
+                                              norm=TRUE,
+                                              early.stop=TRUE),
                        encoder.data="scale.data",
                        supervised='none',
                        run.encoder=TRUE,
-                       run.decoder=TRUE,
-                       log.dir=file.path(results.dir, 'models','gene_input'),
+                       run.decoder=FALSE,
+                       log.dir=file.path('~/models_temp','gene_input'),
                        device="CPU")
 
-  aligned_data  = reducedDim(scAlignHSC, "ALIGNED-GENE")
-  aligned_young = aligned_data[which(cell_age == "young"),]
-  aligned_old   = aligned_data[which(cell_age == "old"),]
+  aligned_data  = reducedDim(scAlignCB, "ALIGNED-GENE")
+  aligned_CEL = aligned_data[which(batch == "CEL"),]
+  aligned_SORT   = aligned_data[which(batch == "SORT"),]
 
-  class_res = knn(aligned_young, aligned_old, cell_type[which(cell_age == "young")], k=15)
-  class_acc = mean(class_res == cell_type[which(cell_age == "old")])
+  class_res = knn(aligned_CEL, aligned_SORT, mix.types[which(batch == "CEL")], k=15)
+  class_acc = mean(class_res == mix.types[which(batch == "SORT")])
   expect_gte(class_acc, 0.5)
 
 })

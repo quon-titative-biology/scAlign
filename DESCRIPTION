@@ -24,7 +24,8 @@ Imports: SingleCellExperiment,
 	 Rtsne,
 	 ggplot2,
 	 methods,
-         utils
+         utils,
+         class
 Suggests: knitr,
           rmarkdown,
           testthat

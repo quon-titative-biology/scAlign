@@ -286,8 +286,8 @@ PlotTSNE = function(object, data.use, labels.use="scAlign.labels", cols=NULL, ti
   ## Set the data for current alignment
   if(is.element(data.use, names(assays(sce.object)))){
     ## placeholders, works for now (data) until work on multi alignment
-    object1 = t(assay(sce.object, data.use)[,object1.idx]);
-    object2 = t(assay(sce.object, data.use)[,object2.idx]);
+    object1 = t(as.matrix(assay(sce.object, data.use))[,object1.idx]);
+    object2 = t(as.matrix(assay(sce.object, data.use))[,object2.idx]);
     data.use = "GENE"
   }else if(is.element(data.use, names(reducedDims(sce.object)))){
     ## placeholders, works for now (data) until work on multi alignment

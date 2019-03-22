@@ -5,6 +5,12 @@ A deep learning-based tool for alignment and integration of single cell genomic 
 
 [Unsupervised aligment and projection of HSCs](https://github.com/quon-titative-biology/examples/blob/master/scAlign_kowalcyzk_et_al/scAlign_kowalcyzk_et_al.md)
 
+## Updates
+
+TODO: Finalize partial labels code. (ETA: 3/25/19)
+
+TODO: Supervised and partially supervised tutorial.
+
 ## Package requirements
 
 Guide to installing python and tensorflow on different operating systems.

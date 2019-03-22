@@ -1,6 +1,10 @@
 # scAlign
 A deep learning-based tool for alignment and integration of single cell genomic data across multiple datasets, species, conditions, batches
 
+## Tutorials
+
+[Unsupervised aligment and projection of HSCs](https://github.com/quon-titative-biology/examples/blob/master/scAlign_kowalcyzk_et_al/scAlign_kowalcyzk_et_al.md)
+
 ## Package requirements
 
 Guide to installing python and tensorflow on different operating systems.

@@ -1,5 +1,5 @@
 ---
-title: "alignment_tutorial"
+title: "scAlign Tutorial"
 author: "Nelson Johansen, Gerald Quon"
 date: "`r Sys.Date()`"
 output: pdf_document
@@ -64,16 +64,18 @@ The gene count matrices used for this tutorial are hosted on the cellbench githu
 
 First, we load in the normalized cellbench data. The data was normalized following the procedures defined on the cellbench github.
 
-```{r}
+```{r, message=FALSE}
 library(scAlign)
 library(SingleCellExperiment)
 library(ggplot2)
+library(gridExtra)
 
 ## Load in cellbench data
 data("cellbench", package = "scAlign", envir = environment())
 
 ## Extract RNA mixture cell types
 mix.types = unlist(lapply(strsplit(colnames(cellbench), "-"), "[[", 2))
+
 ## Extract Platform
 batch = c(rep("CEL", length(which(!grepl("sortseq", colnames(cellbench)) == TRUE))),
           rep("SORT", length(which(grepl("sortseq", colnames(cellbench)) == TRUE))))
@@ -149,15 +151,14 @@ gene_plot = PlotTSNE(scAlignCB,
                      "ALIGNED-GENE",
                      title="scAlign-Gene",
                      perplexity=30)
-
+## Show plot
+gene_plot
 # cca_plot = PlotTSNE(scAlignCB,
 #                     "ALIGNED-CCA",
 #                     title="scAlign-CCA",
 #                     perplexity=30)
 #
-# multi_plot_labels = grid.arrange(gene_plot, cca_plot,
-#                                  nrow = 1,
-#                                  layout_matrix=cbind(1,1,1,2,2,2))
+# multi_plot_labels = grid.arrange(gene_plot, cca_plot, nrow = 1)
 ```
 
 # Session Info

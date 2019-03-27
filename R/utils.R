@@ -19,49 +19,48 @@
 #'
 #' @examples
 #'
-#' library(SingleCellExperiment)
+#'  library(SingleCellExperiment)
 #'
-#' ## Input data, 1000 genes x 100 cells
-#' data = matrix(sample.int(10000, 1000*100, TRUE), 1000, 100)
-#' rownames(data) = paste0("gene", seq_len(1000))
-#' colnames(data) = paste0("cell", seq_len(100))
+#'  ## Input data, 1000 genes x 100 cells
+#'  data = matrix( rnorm(1000*100,mean=0,sd=1), 1000, 100)
+#'  rownames(data) = paste0("gene", seq_len(1000))
+#'  colnames(data) = paste0("cell", seq_len(100))
 #'
-#' age    = c(rep("young",50), rep("old",50))
-#' labels = c(c(rep("type1",25), rep("type2",25)), c(rep("type1",25), rep("type2",25)))
+#'  age    = c(rep("young",50), rep("old",50))
+#'  labels = c(c(rep("type1",25), rep("type2",25)), c(rep("type1",25), rep("type2",25)))
 #'
-#' ctrl.data = data[,which(age == "young")]
-#' stim.data = data[,which(age == "old")]
+#'  ctrl.data = data[,which(age == "young")]
+#'  stim.data = data[,which(age == "old")]
 #'
-#' ## Build the SCE object for input to scAlign using Seurat preprocessing and variable gene selection
-#' ctrlSCE <- SingleCellExperiment(
-#'               assays = list(scale.data = data[,which(age == "young")]))
+#'  ## Build the SCE object for input to scAlign using Seurat preprocessing and variable gene selection
+#'  ctrlSCE <- SingleCellExperiment(
+#'                assays = list(scale.data = data[,which(age == "young")]))
 #'
-#' stimSCE <- SingleCellExperiment(
-#'               assays = list(scale.data = data[,which(age == "old")]))
+#'  stimSCE <- SingleCellExperiment(
+#'                assays = list(scale.data = data[,which(age == "old")]))
 #'
-#' ## Build the scAlign class object and compute PCs
-#' scAlignHSC = scAlignCreateObject(sce.objects = list("YOUNG"=ctrlSCE,
-#'                                                     "OLD"=stimSCE),
-#'                                  labels = list(labels[which(age == "young")],
-#'                                                labels[which(age == "old")]),
-#'                                  pca.reduce = TRUE,
-#'                                  pcs.compute = 50,
-#'                                  cca.reduce = TRUE,
-#'                                  ccs.compute = 15,
-#'                                  project.name = "scAlign_Kowalcyzk_HSC")
+#'  ## Build the scAlign class object and compute PCs
+#'  scAlignHSC = scAlignCreateObject(sce.objects = list("YOUNG"=ctrlSCE,
+#'                                                      "OLD"=stimSCE),
+#'                                   labels = list(labels[which(age == "young")],
+#'                                                 labels[which(age == "old")]),
+#'                                   pca.reduce = FALSE,
+#'                                   cca.reduce = FALSE,
+#'                                   project.name = "scAlign_Kowalcyzk_HSC")
 #'
-#' ## Run scAlign with high_var_genes
-#' scAlignHSC = scAlign(scAlignHSC,
-#'                    options=scAlignOptions(steps=1, log.every=1, norm=TRUE, early.stop=FALSE),
-#'                    encoder.data="scale.data",
-#'                    supervised='none',
-#'                    run.encoder=TRUE,
-#'                    run.decoder=FALSE,
-#'                    log.dir=file.path('~/models','gene_input'),
-#'                    device="CPU")
+#'  ## Run scAlign with high_var_genes
+#'  scAlignHSC = scAlign(scAlignHSC,
+#'                     options=scAlignOptions(steps=100, log.every=100, norm=TRUE, early.stop=FALSE),
+#'                     encoder.data="scale.data",
+#'                     supervised='none',
+#'                     run.encoder=TRUE,
+#'                     run.decoder=FALSE,
+#'                     log.results=FALSE,
+#'                     log.dir=file.path('~/models','gene_input'),
+#'                     device="CPU")
 #'
-#' ## Plot alignment for 3 input types
-#' example_plot = PlotTSNE(scAlignHSC, "ALIGNED-GENE", "labels", title="scAlign-Gene", perplexity=30)
+#'  ## Plot alignment for 3 input types
+#'  example_plot = PlotTSNE(scAlignHSC, "ALIGNED-GENE", "scAlign.labels", title="scAlign-Gene", perplexity=30)
 #'
 #' @export
 PlotTSNE = function(object, data.use, labels.use="scAlign.labels", cols=NULL, title="", legend="none", seed=1234, ...){
@@ -84,7 +83,7 @@ PlotTSNE = function(object, data.use, labels.use="scAlign.labels", cols=NULL, ti
                            panel.background = element_rect(fill = "transparent"), # bg of the panel
                            plot.background = element_rect(fill = "transparent", color = NA),
                            axis.line = element_line(colour = 'black',size=1),
-                           plot.title = element_text(color='black', size=64, hjust = 0.5),
+                           plot.title = element_text(color='black', size=20, hjust = 0.5),
                            axis.text.x = element_text(color='black', size=14),
                            axis.text.y = element_text(color='black', size=14),
                            axis.title=element_text(size=24),
@@ -291,8 +290,8 @@ PlotTSNE = function(object, data.use, labels.use="scAlign.labels", cols=NULL, ti
     data.use = "GENE"
   }else if(is.element(data.use, names(reducedDims(sce.object)))){
     ## placeholders, works for now (data) until work on multi alignment
-    object1 = reducedDim(sce.object, data.use)[object1.idx,];
-    object2 = reducedDim(sce.object, data.use)[object2.idx,];
+    object1 = as.matrix(reducedDim(sce.object, data.use)[object1.idx,]);
+    object2 = as.matrix(reducedDim(sce.object, data.use)[object2.idx,]);
   }else{
     print("Choice for data.use does not exist in SCE assays or reducedDims.")
   }

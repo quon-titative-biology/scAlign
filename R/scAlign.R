@@ -12,7 +12,7 @@
 #' @param supervised Run scAlign in supervised mode, requires labels.
 #' @param run.encoder Run scAlign alignment procedure.
 #' @param run.decoder Run scAlign projection through paired decoders.
-#' @param device Specify hardware to use.
+#' @param device Specify hardware to use. May not work on all systems, manually set CUDA_VISIBLE_DEVICES if necessary.
 #' @param log.dir Location to save results.
 #' @param log.results Determines if results should be written to log.dir.
 #'
@@ -115,7 +115,7 @@ scAlign = function(sce.object,
       ## Saving ##
       tensorflow::flag_string('logdir', arguments$log.dir, 'Training log path.'),
       tensorflow::flag_integer('log_every_n_steps', options$log.every, 'Logging interval for training loop.'),
-      tensorflow::flag_integer('max_checkpoints', 25, 'Maximum number of recent checkpoints to keep.'),
+      tensorflow::flag_integer('max_checkpoints', 5, 'Maximum number of recent checkpoints to keep.'),
       tensorflow::flag_numeric('keep_checkpoint_every_n_hours', 5.0, 'How often checkpoints should be kept.'),
       tensorflow::flag_integer('save_summaries_secs', 300, 'How often should summaries be saved (in seconds).'),
       tensorflow::flag_integer('save_interval_secs', 600, 'How often should checkpoints be saved (in seconds).'),
@@ -170,15 +170,15 @@ scAlign = function(sce.object,
       tensorflow::flag_string('tsne_init', 'random', 'If int, random_state is the seed used by the random number generator'),
       ## Data options ##
       tensorflow::flag_boolean('norm', options$norm, 'Perform L2 normalization during training on the mini batches.'),
-      tensorflow::flag_boolean('full_norm', options$full_norm, 'Perform L2 normalization prior to training on the full data matrix.'),
+      tensorflow::flag_boolean('full_norm', options$full.norm, 'Perform L2 normalization prior to training on the full data matrix.'),
       ## Testing options ##
       tensorflow::flag_integer('mini_batch', 50, 'Number samples per testing batch.'),
       ## Hardware ##
-      tensorflow::flag_string('cuda_device', '0', 'Select the GPU for this job'))
+      tensorflow::flag_string('cuda_device', options$gpu.device, 'Select the GPU for this job'))
 
     ## Verbosity of tensorflow output. Filters: (1 INFO) (2 WARNINGS) (3 ERRORS)
     Sys.setenv(TF_CPP_MIN_LOG_LEVEL=3);
-    Sys.setenv(CUDA_VISIBLE_DEVICES=0);
+    Sys.setenv(CUDA_VISIBLE_DEVICES=options$gpu.device);
 
     ## Hardware configurations for GPU if enabled
     config = tf$ConfigProto(gpu_options = tf$GPUOptions(allow_growth=TRUE),
@@ -212,14 +212,15 @@ scAlign = function(sce.object,
       ## Domain Adaptation
       if(run.encoder == TRUE){
         print("============== Step 1/3: Encoder training ===============")
-        aligned_data = encoderModel_train_encoder(FLAGS, 'alignment', config,
-                                                  num_labels, data_shape,
-                                                  object1.name, object2.name,
-                                                  object1, as.integer(
-                                                             as.factor(colData(sce.object)[,"scAlign.labels"][object1.name == colData(sce.object)[,"group.by"]])),
-                                                  object2, as.integer(
-                                                             as.factor(colData(sce.object)[,"scAlign.labels"][object2.name == colData(sce.object)[,"group.by"]])))
-        reducedDim(sce.object, paste0("ALIGNED-", data.use)) = aligned_data
+        aligned = encoderModel_train_encoder(FLAGS, 'alignment', config,
+                                             num_labels, data_shape,
+                                             object1.name, object2.name,
+                                             object1, as.integer(
+                                                        as.factor(colData(sce.object)[,"scAlign.labels"][object1.name == colData(sce.object)[,"group.by"]])),
+                                             object2, as.integer(
+                                                        as.factor(colData(sce.object)[,"scAlign.labels"][object2.name == colData(sce.object)[,"group.by"]])))
+        reducedDim(sce.object, paste0("ALIGNED-", data.use)) = aligned[[1]]
+        metadata(sce.object)[[paste0("LOSS-", data.use)]] = aligned[[2]]
       }
     }, error=function(e){
       print("Error during alignment, returning scAlign class.")

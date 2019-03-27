@@ -279,9 +279,11 @@ encoderModel_train_encoder = function(FLAGS, CV, config,
         ## Complete training
         if(step == FLAGS$max_steps){
           if(FLAGS$log.results == FALSE){ emb = encoderModel_calc_embedding(sess, rbind(source_data, target_data), test_emb, test_in, FLAGS) }
-          return(emb)
+          sess$close()
+          return(list(emb, round(res[[3]], 4)))
         }
       }
   })
+  sess$close()
   return(NULL)
 }

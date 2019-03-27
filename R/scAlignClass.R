@@ -80,8 +80,11 @@ scAlignCreateObject = function(sce.objects,
     ## Determines dataset split
     colData(combined.sce)[,"group.by"] = c(rep(names(sce.objects)[1], ncol(sce.objects[[names(sce.objects)[1]]])),
                                                     rep(names(sce.objects)[2], ncol(sce.objects[[names(sce.objects)[2]]])))
-    ## Set labels to be used in supervised training or defaults
-    colData(combined.sce)[,"scAlign.labels"] = if(length(unlist(labels)) == 0) rep("NA", nrow(colData(combined.sce))) else unlist(labels)
+    tryCatch({
+      ## Set labels to be used in supervised training or defaults
+      colData(combined.sce)[,"scAlign.labels"] = if(length(unlist(labels)) == 0) rep("NA", nrow(colData(combined.sce))) else as.integer(factor(unlist(labels)))
+      colData(combined.sce)[,"scAlign.labels"][is.na(colData(combined.sce)[,"scAlign.labels"])] = 0
+    }, error=function(e){print("Error converting labels to factors."); stop(e);})
     if(length(colData(combined.sce)[,"scAlign.labels"]) < nrow(colData(combined.sce))) { stop("Not enough labels for all cells.") }
     metadata(combined.sce)[["arguments"]] = data.frame(encoder.data=character(),
                                              decoder.data=character(),
@@ -153,8 +156,9 @@ scAlignCreateObject = function(sce.objects,
 #' @param num.dim (default: 32) Number of dimensions for joint embedding space.
 #' @param perplexity (default: 30) Determines the neighborhood size for each sample.
 #' @param norm (default: TRUE) Normalize the data mini batches while training scAlign (repeated).
-#' @param full_norm (default: FALSE) Normalize the data matrix prior to scAlign (done once).
+#' @param full.norm (default: FALSE) Normalize the data matrix prior to scAlign (done once).
 #' @param early.stop (default: TRUE) Early stopping during network training.
+#' @param gpu.device (default: '0') Which gpu to use.
 #' @param seed (default: 1245) Sets graph level random seed in tensorflow.
 #
 #' @examples
@@ -169,11 +173,12 @@ scAlignOptions = function(steps = 15000, batch.size = 150,
                           learning.rate = 1e-4, log.every = 5000,
                           architecture="small",
                           num.dim = 32, perplexity = 30,
-                          norm = TRUE, full_norm = FALSE, early.stop = TRUE,
+                          norm = TRUE, full.norm = FALSE,
+                          early.stop = TRUE, gpu.device = '0',
                           seed = 1234){
 
      valid_opts = c("steps", "batch.size", "learning.rate", "log.every", "architecture",
-                   "num.dim", "perplexity", "norm", "full_norm", "early.stop", "seed")
+                   "num.dim", "perplexity", "norm", "full.norm", "early.stop", "gpu.device", "seed")
      opts = data.frame(steps = steps,
                        batch.size = batch.size,
                        learning.rate = learning.rate,
@@ -182,19 +187,21 @@ scAlignOptions = function(steps = 15000, batch.size = 150,
                        num.dim = num.dim,
                        perplexity = perplexity,
                        norm = norm,
-                       full_norm = full_norm,
+                       full.norm = full.norm,
                        early.stop = early.stop,
-                       seed = seed, stringsAsFactors=FALSE)
+                       gpu.device = as.character(gpu.device),
+                       seed = seed,
+                       stringsAsFactors=FALSE)
     colnames(opts) = valid_opts
 
-    if(!is.null(options)){
-      if(all(names(options) %in% valid_opts)){
-        ## Populate options with user supplied parameters
-        for(name in names(options)){
-          opts[,name] = options[[name]]
-        }
-      }else{ stop(paste0("These provided options are not valid: ", names(options)[which(!names(options) %in% valid_opts)])) }
-    }
+    # if(!is.null(options)){
+    #   if(all(names(options) %in% valid_opts)){
+    #     ## Populate options with user supplied parameters
+    #     for(name in names(options)){
+    #       opts[,name] = options[[name]]
+    #     }
+    #   }else{ stop(paste0("These provided options are not valid: ", names(options)[which(!names(options) %in% valid_opts)])) }
+    # }
     return(opts)
 }
 

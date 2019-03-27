@@ -73,15 +73,21 @@ encoderModel_add_semisup_loss_data_driven = function(p_target, a, b, data_shape,
 #' @import tensorflow
 #'
 #' @keywords internal
-encoderModel_add_logit_loss = function(logits, labels, weight=1.0, smoothing=0.0){
+encoderModel_add_logit_loss = function(logits, labels, weight=1.0){
+   if(any(labels == NA)){
+     print("==============================================================")
+     print("== Found missing labels, setting up partial label classfier ==")
+     print("==============================================================")
+     ## points without labels should have a label value of 0, so 0 weight.
+     weight = tf$clip_by_value(labels, 0, 1)
+   }
    ## Add clossifier
    with(tf$name_scope('loss_classifier'), {
        logit_loss = tf$losses$softmax_cross_entropy(
            tf$one_hot(labels, logits$get_shape()[-1]),
            logits,
            scope='loss_logit',
-           weights=weight,
-           label_smoothing=smoothing)
+           weights=weight)
        # self.add_average(logit_loss)
        tf$summary$scalar('Loss_Logit', logit_loss)
        logit_loss = tf$Print(logit_loss, list(logit_loss), message="class: ")

@@ -160,6 +160,9 @@ scAlign = function(sce.object,
       tensorflow::flag_string('visit_weight_envelope', 'None','Increase visit weight with an envelope: [None, sigmoid, linear]'),
       tensorflow::flag_integer('visit_weight_envelope_steps', 0, 'Number of steps (after delay) at which envelope saturates. -1 = follow walker loss env.'),
       tensorflow::flag_integer('visit_weight_envelope_delay', 0, 'Number of steps at which envelope starts. -1 = follow walker loss env.'),
+      ## Loss options ##
+      tensorflow::flag_boolean('walker_loss', options$walker.loss, 'Add walker loss to model.'),
+      tensorflow::flag_boolean('reconc_loss', options$reconc.loss, 'Add reconstruction loss to model during alignment.'),
       ## t-SNE kernel ##
       tensorflow::flag_string('kernel', 'tsne', 'Which kernel method tsne or original T (uniform),?'),
       tensorflow::flag_string('prob_comp', 'exp',  'How to compute p_ab, p_ba: non_exp (expless softmax), or softmax'),
@@ -187,14 +190,14 @@ scAlign = function(sce.object,
                             device_count = dict('GPU', 1))
 
     if(FLAGS$log.results == TRUE){
-      dir.create(file.path(FLAGS$logdir, '/model_full'), showWarnings = FALSE)
-      dir.create(file.path(FLAGS$logdir, '/model_full/plots'), showWarnings = FALSE)
+      dir.create(file.path(FLAGS$logdir), showWarnings = FALSE)
+      dir.create(file.path(FLAGS$logdir, '/plots'), showWarnings = FALSE)
       for(itr in seq_len(length(unique(colData(sce.object)[,"group.by"])))){
           dir.create(file.path(FLAGS$logdir, paste0(unique(colData(sce.object)[,"group.by"])[itr], '_decoder')),
                      showWarnings = FALSE)
       }
       ## Write out all run options for reproducability
-      write.table(as.data.frame(FLAGS), file=file.path(FLAGS$logdir, 'model_full/run_flags.txt'), sep="\t", row.names=FALSE, col.names=TRUE)
+      write.table(as.data.frame(FLAGS), file=file.path(FLAGS$logdir, 'run_flags.txt'), sep="\t", row.names=FALSE, col.names=TRUE)
     }
 
     ## Supervised options

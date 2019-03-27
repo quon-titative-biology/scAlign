@@ -158,6 +158,8 @@ scAlignCreateObject = function(sce.objects,
 #' @param norm (default: TRUE) Normalize the data mini batches while training scAlign (repeated).
 #' @param full.norm (default: FALSE) Normalize the data matrix prior to scAlign (done once).
 #' @param early.stop (default: TRUE) Early stopping during network training.
+#' @param walker.loss (default: TRUE) Add walker loss to model.
+#' @param reconc.loss (default: FALSE) Add reconstruction loss to model during alignment.
 #' @param gpu.device (default: '0') Which gpu to use.
 #' @param seed (default: 1245) Sets graph level random seed in tensorflow.
 #
@@ -174,11 +176,14 @@ scAlignOptions = function(steps = 15000, batch.size = 150,
                           architecture="small",
                           num.dim = 32, perplexity = 30,
                           norm = TRUE, full.norm = FALSE,
-                          early.stop = TRUE, gpu.device = '0',
+                          early.stop = TRUE,
+                          walker.loss = TRUE, reconc.loss = FALSE,
+                          gpu.device = '0',
                           seed = 1234){
 
      valid_opts = c("steps", "batch.size", "learning.rate", "log.every", "architecture",
-                   "num.dim", "perplexity", "norm", "full.norm", "early.stop", "gpu.device", "seed")
+                   "num.dim", "perplexity", "norm", "full.norm", "early.stop", "walker.loss",
+                   "reconc.loss", "gpu.device", "seed")
      opts = data.frame(steps = steps,
                        batch.size = batch.size,
                        learning.rate = learning.rate,
@@ -189,6 +194,8 @@ scAlignOptions = function(steps = 15000, batch.size = 150,
                        norm = norm,
                        full.norm = full.norm,
                        early.stop = early.stop,
+                       walker.loss = walker.loss,
+                       reconc.loss = reconc.loss,
                        gpu.device = as.character(gpu.device),
                        seed = seed,
                        stringsAsFactors=FALSE)

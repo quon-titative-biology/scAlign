@@ -109,57 +109,102 @@ encoderModel_train_encoder = function(FLAGS, CV, config,
     source_emb = encoderModel_data_to_embedding(model_function, source_batch[[1]], is_training=TRUE)
     target_emb = encoderModel_data_to_embedding(model_function, target_batch[[1]], is_training=TRUE)
 
-    ## Add source assoc loss
-    if(FLAGS$walker_weight != 0.0){
-        print("Adding source walker loss")
-        ## Specific form of walker loss
-        T_source = define_kernel_matrix(method=FLAGS$kernel, data=source_batch[[1]], data_shape=FLAGS$unsup_batch_size, perplexity=FLAGS$perplexity)
-        encoderModel_add_semisup_loss_data_driven(T_source,
-                                                   source_emb,
-                                                   target_emb,
-                                                   FLAGS$unsup_batch_size, ## Replace for balanced case
-                                                   walker_weight=FLAGS$walker_weight,
-                                                   mode='source',
-                                                   comp=FLAGS$prob_comp,
-                                                   debug=FLAGS$verbose)
-    }else{print("SOURCE STRUCUTRE NOT ENFORCED")}
 
-    ## Add target assoc loss
-    if(FLAGS$target_walker_weight != 0.0){
-        print("Adding target walker loss")
-        T_target = define_kernel_matrix(method=FLAGS$kernel, data=target_batch[[1]], data_shape=FLAGS$unsup_batch_size, perplexity=FLAGS$perplexity)
-        encoderModel_add_semisup_loss_data_driven(T_target,
-                                                   target_emb,
-                                                   source_emb,
-                                                   FLAGS$unsup_batch_size, ## Replace for balanced case
-                                                   walker_weight=FLAGS$target_walker_weight,
-                                                   mode='target',
-                                                   comp=FLAGS$prob_comp,
-                                                   debug=FLAGS$verbose)
-    }else{print("TARGET STRUCUTRE NOT ENFORCED")}
+    if(FLAGS$walker_loss == TRUE){
+      ## Add source assoc loss
+      if(FLAGS$walker_weight != 0.0){
+          print("Adding source walker loss")
+          ## Specific form of walker loss
+          T_source = define_kernel_matrix(method=FLAGS$kernel, data=source_batch[[1]], data_shape=FLAGS$unsup_batch_size, perplexity=FLAGS$perplexity)
+          encoderModel_add_semisup_loss_data_driven(T_source,
+                                                     source_emb,
+                                                     target_emb,
+                                                     FLAGS$unsup_batch_size, ## Replace for balanced case
+                                                     walker_weight=FLAGS$walker_weight,
+                                                     mode='source',
+                                                     comp=FLAGS$prob_comp,
+                                                     debug=FLAGS$verbose)
+      }else{print("SOURCE STRUCUTRE NOT ENFORCED")}
 
-    ## Add classificaiton loss
-    if(FLAGS$supervised != 'none'){
-        print("Adding classifier loss ")
-        ## source specific loss for classifier
-        if(FLAGS$supervised == obj1_name){
-            ## Compute unnormalized class probabilities
-            logits = encoderModel_embedding_to_logit(source_emb, num_labels)
-            encoderModel_add_logit_loss(logits,
-                           source_batch[[2]],
-                           weight=FLAGS$logit_weight)
-        }else if(FLAGS$supervised == obj2_name){
-            ## Compute unnormalized class probabilities
-            logits = encoderModel_embedding_to_logit(target_emb, num_labels)
-            encoderModel_add_logit_loss(logits,
-                           target_batch[[2]],
-                           weight=FLAGS$logit_weight)
-        }else if(FLAGS$supervised == 'both'){
-            logits = encoderModel_embedding_to_logit(tf$concat(list(source_emb, target_emb), axis=as.integer(0)), num_labels)
-            encoderModel_add_logit_loss(logits,
-                           tf$concat(list(source_batch[[2]], target_batch[[2]]), axis=as.integer(0)),
-                           weight=FLAGS$logit_weight)
-        }else{print("Invalid FLAGS$supervised"); quit("no");}
+      ## Add target assoc loss
+      if(FLAGS$target_walker_weight != 0.0){
+          print("Adding target walker loss")
+          T_target = define_kernel_matrix(method=FLAGS$kernel, data=target_batch[[1]], data_shape=FLAGS$unsup_batch_size, perplexity=FLAGS$perplexity)
+          encoderModel_add_semisup_loss_data_driven(T_target,
+                                                     target_emb,
+                                                     source_emb,
+                                                     FLAGS$unsup_batch_size, ## Replace for balanced case
+                                                     walker_weight=FLAGS$target_walker_weight,
+                                                     mode='target',
+                                                     comp=FLAGS$prob_comp,
+                                                     debug=FLAGS$verbose)
+      }else{print("TARGET STRUCUTRE NOT ENFORCED")}
+
+      ## Add classificaiton loss
+      if(FLAGS$supervised != 'none'){
+          print("Adding classifier loss ")
+          ## source specific loss for classifier
+          if(FLAGS$supervised == obj1_name){
+              ## Compute unnormalized class probabilities
+              logits = encoderModel_embedding_to_logit(source_emb, num_labels)
+              encoderModel_add_logit_loss(logits,
+                             source_batch[[2]],
+                             weight=FLAGS$logit_weight)
+          }else if(FLAGS$supervised == obj2_name){
+              ## Compute unnormalized class probabilities
+              logits = encoderModel_embedding_to_logit(target_emb, num_labels)
+              encoderModel_add_logit_loss(logits,
+                             target_batch[[2]],
+                             weight=FLAGS$logit_weight)
+          }else if(FLAGS$supervised == 'both'){
+              logits = encoderModel_embedding_to_logit(tf$concat(list(source_emb, target_emb), axis=as.integer(0)), num_labels)
+              encoderModel_add_logit_loss(logits,
+                             tf$concat(list(source_batch[[2]], target_batch[[2]]), axis=as.integer(0)),
+                             weight=FLAGS$logit_weight)
+          }else{print("Invalid FLAGS$supervised"); quit("no");}
+      }
+    }
+
+    if(FLAGS$reconc_loss == TRUE){
+      with(tf$variable_scope("source_decoder"), {
+        model_function_decoder_src = partial(
+            match.fun(paste0("decoder_", FLAGS$decoder)),
+            emb_size=FLAGS$emb_size,
+            final_dim=as.integer(data_shape),
+            complexity=FLAGS$complexity,
+            batch_norm=FLAGS$batch_norm)
+
+        ## Define test first, also acts as network initializer.
+        ## tf.get_variable() is only called when reuse=FALSE for named/var scopes...
+        test_in_src = tf$placeholder(tf$float32, shape(NULL, FLAGS$emb_size), 'test_in')
+        test_proj_src = decoderModel_emb_to_proj(model_function_decoder_src, test_in_src, is_training=FALSE)
+
+        ## Define decoder op for training
+        proj_src = decoderModel_emb_to_proj(model_function_decoder_src, source_emb, is_training=TRUE)
+
+        ## Loss
+        decoderModel_add_mse_loss(proj_src, source_batch[[1]], 'source')
+      })
+
+      with(tf$variable_scope("target_decoder"), {
+        model_function_decoder_trg = partial(
+            match.fun(paste0("decoder_", FLAGS$decoder)),
+            emb_size=FLAGS$emb_size,
+            final_dim=as.integer(data_shape),
+            complexity=FLAGS$complexity,
+            batch_norm=FLAGS$batch_norm)
+
+        ## Define test first, also acts as network initializer.
+        ## tf.get_variable() is only called when reuse=FALSE for named/var scopes...
+        test_in_trg = tf$placeholder(tf$float32, shape(NULL, FLAGS$emb_size), 'test_in')
+        test_proj_trg = decoderModel_emb_to_proj(model_function_decoder_trg, test_in_trg, is_training=FALSE)
+
+        ## Define decoder op for training
+        proj_trg = decoderModel_emb_to_proj(model_function_decoder_trg, target_emb, is_training=TRUE)
+
+        ## Loss
+        decoderModel_add_mse_loss(proj_trg, target_batch[[1]], 'target')
+      })
     }
 
     ## Global training step
@@ -268,7 +313,7 @@ encoderModel_train_encoder = function(FLAGS, CV, config,
 
           ## Plot at every loggin step
           if((FLAGS$plot==TRUE) & (step > 1)){
-            .plotTSNE(emb, c(rep(obj1_name, nrow(source_data)), rep(obj2_name, nrow(target_data))), file_out=paste0(file.path(FLAGS$logdir, paste0('model_full/plots/step_', as.character(step), '.png'))))
+            .plotTSNE(emb, c(rep(obj1_name, nrow(source_data)), rep(obj2_name, nrow(target_data))), file_out=paste0(file.path(FLAGS$logdir, paste0('plots/step_', as.character(step), '.png'))))
           }
           ## Write summaries
           summary_writer$add_summary(res[[2]], step)

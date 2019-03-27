@@ -34,59 +34,47 @@ Helper function to plot aligned data from the results of running scAlign().
 }
 \examples{
 
-library(Seurat)
-library(SingleCellExperiment)
+ library(SingleCellExperiment)
 
-## Input data, 1000 genes x 100 cells
-data = matrix(sample.int(10000, 1000*100, TRUE), 1000, 100)
-rownames(data) = paste0("gene", seq_len(1000))
-colnames(data) = paste0("cell", seq_len(100))
+ ## Input data, 1000 genes x 100 cells
+ data = matrix( rnorm(1000*100,mean=0,sd=1), 1000, 100)
+ rownames(data) = paste0("gene", seq_len(1000))
+ colnames(data) = paste0("cell", seq_len(100))
 
-age    = c(rep("young",50), rep("old",50))
-labels = c(c(rep("type1",25), rep("type2",25)), c(rep("type1",25), rep("type2",25)))
+ age    = c(rep("young",50), rep("old",50))
+ labels = c(c(rep("type1",25), rep("type2",25)), c(rep("type1",25), rep("type2",25)))
 
-ctrl.data = data[,which(age == "young")]
-stim.data = data[,which(age == "old")]
+ ctrl.data = data[,which(age == "young")]
+ stim.data = data[,which(age == "old")]
 
-ctrl = CreateSeuratObject(raw.data = ctrl.data, project = "MOUSE_AGE", min.cells = 0)
-ctrl = ScaleData(ctrl, do.scale=TRUE, do.center=TRUE, scale.max=50, display.progress = TRUE)
+ ## Build the SCE object for input to scAlign using Seurat preprocessing and variable gene selection
+ ctrlSCE <- SingleCellExperiment(
+               assays = list(scale.data = data[,which(age == "young")]))
 
-stim = CreateSeuratObject(raw.data = stim.data, project = "MOUSE_AGE", min.cells = 0)
-stim = ScaleData(stim, do.scale=TRUE, do.center=TRUE, scale.max=50, display.progress = TRUE)
+ stimSCE <- SingleCellExperiment(
+               assays = list(scale.data = data[,which(age == "old")]))
 
-## Build the SCE object for input to scAlign using Seurat preprocessing and variable gene selection
-ctrlSCE <- SingleCellExperiment(
-              assays = list(
-                counts = t(FetchData(ctrl, vars.all=rownames(data), use.raw=TRUE)),
-                scale.data = t(FetchData(ctrl, vars.all=rownames(data), use.scaled=TRUE))))
+ ## Build the scAlign class object and compute PCs
+ scAlignHSC = scAlignCreateObject(sce.objects = list("YOUNG"=ctrlSCE,
+                                                     "OLD"=stimSCE),
+                                  labels = list(labels[which(age == "young")],
+                                                labels[which(age == "old")]),
+                                  pca.reduce = FALSE,
+                                  cca.reduce = FALSE,
+                                  project.name = "scAlign_Kowalcyzk_HSC")
 
-stimSCE <- SingleCellExperiment(
-              assays = list(
-                counts = t(FetchData(stim, vars.all=rownames(data), use.raw=TRUE)),
-                scale.data = t(FetchData(stim, vars.all=rownames(data), use.scaled=TRUE))))
+ ## Run scAlign with high_var_genes
+ scAlignHSC = scAlign(scAlignHSC,
+                    options=scAlignOptions(steps=100, log.every=100, norm=TRUE, early.stop=FALSE),
+                    encoder.data="scale.data",
+                    supervised='none',
+                    run.encoder=TRUE,
+                    run.decoder=FALSE,
+                    log.results=FALSE,
+                    log.dir=file.path('~/models','gene_input'),
+                    device="CPU")
 
-## Build the scAlign class object and compute PCs
-scAlignHSC = scAlignCreateObject(sce.objects = list("YOUNG"=ctrlSCE,
-                                                    "OLD"=stimSCE),
-                                 labels = list(labels[which(age == "young")],
-                                               labels[which(age == "old")]),
-                                 pca.reduce = TRUE,
-                                 pcs.compute = 50,
-                                 cca.reduce = TRUE,
-                                 ccs.compute = 15,
-                                 project.name = "scAlign_Kowalcyzk_HSC")
-
-## Run scAlign with high_var_genes
-scAlignHSC = scAlign(scAlignHSC,
-                   options=scAlignOptions(steps=1000, log.every=1000, norm=TRUE, early.stop=TRUE),
-                   encoder.data="scale.data",
-                   supervised='none',
-                   run.encoder=TRUE,
-                   run.decoder=FALSE,
-                   log.dir=file.path('~/models','gene_input'),
-                   device="CPU")
-
-## Plot alignment for 3 input types
-example_plot = PlotTSNE(scAlignHSC, "ALIGNED-GENE", "labels", title="scAlign-Gene", perplexity=30)
+ ## Plot alignment for 3 input types
+ example_plot = PlotTSNE(scAlignHSC, "ALIGNED-GENE", "scAlign.labels", title="scAlign-Gene", perplexity=30)
 
 }

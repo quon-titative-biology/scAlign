@@ -28,7 +28,7 @@ scAlign(sce.object, options = scAlignOptions(), encoder.data,
 
 \item{log.results}{Determines if results should be written to log.dir.}
 
-\item{device}{Specify hardware to use.}
+\item{device}{Specify hardware to use. May not work on all systems, manually set CUDA_VISIBLE_DEVICES if necessary.}
 }
 \value{
 scAlign class
@@ -49,25 +49,12 @@ colnames(data) = paste0("cell", seq_len(100))
 age    = c(rep("young",50), rep("old",50))
 labels = c(c(rep("type1",25), rep("type2",25)), c(rep("type1",25), rep("type2",25)))
 
-ctrl.data = data[,which(age == "young")]
-stim.data = data[,which(age == "old")]
-
-ctrl = CreateSeuratObject(raw.data = ctrl.data, project = "MOUSE_AGE", min.cells = 0)
-ctrl = ScaleData(ctrl, do.scale=TRUE, do.center=TRUE, scale.max=50, display.progress = TRUE)
-
-stim = CreateSeuratObject(raw.data = stim.data, project = "MOUSE_AGE", min.cells = 0)
-stim = ScaleData(stim, do.scale=TRUE, do.center=TRUE, scale.max=50, display.progress = TRUE)
-
 ## Build the SCE object for input to scAlign using Seurat preprocessing and variable gene selection
 ctrlSCE <- SingleCellExperiment(
-              assays = list(
-                counts = t(FetchData(ctrl, vars.all=rownames(data), use.raw=TRUE)),
-                scale.data = t(FetchData(ctrl, vars.all=rownames(data), use.scaled=TRUE))))
+              assays = list(scale.data = data[,which(age == "young")]))
 
 stimSCE <- SingleCellExperiment(
-              assays = list(
-                counts = t(FetchData(stim, vars.all=rownames(data), use.raw=TRUE)),
-                scale.data = t(FetchData(stim, vars.all=rownames(data), use.scaled=TRUE))))
+              assays = list(scale.data = data[,which(age == "old")]))
 
 ## Build the scAlign class object and compute PCs
 scAlignHSC = scAlignCreateObject(sce.objects = list("YOUNG"=ctrlSCE,
@@ -82,7 +69,7 @@ scAlignHSC = scAlignCreateObject(sce.objects = list("YOUNG"=ctrlSCE,
 
 ## Run scAlign with high_var_genes
 scAlignHSC = scAlign(scAlignHSC,
-                   options=scAlignOptions(steps=1000, log.every=1000, norm=TRUE, early.stop=TRUE),
+                   options=scAlignOptions(steps=1, log.every=1, norm=TRUE, early.stop=FALSE),
                    encoder.data="scale.data",
                    supervised='none',
                    run.encoder=TRUE,

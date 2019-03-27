@@ -6,8 +6,9 @@
 \usage{
 scAlignOptions(steps = 15000, batch.size = 150,
   learning.rate = 1e-04, log.every = 5000, architecture = "small",
-  num.dim = 32, perplexity = 30, norm = TRUE, full_norm = FALSE,
-  early.stop = TRUE, seed = 1234)
+  num.dim = 32, perplexity = 30, norm = TRUE, full.norm = FALSE,
+  early.stop = TRUE, walker.loss = TRUE, reconc.loss = FALSE,
+  gpu.device = "0", seed = 1234)
 }
 \arguments{
 \item{steps}{(default: 15000) Number of training iterations for neural networks.}
@@ -26,9 +27,15 @@ scAlignOptions(steps = 15000, batch.size = 150,
 
 \item{norm}{(default: TRUE) Normalize the data mini batches while training scAlign (repeated).}
 
-\item{full_norm}{(default: FALSE) Normalize the data matrix prior to scAlign (done once).}
+\item{full.norm}{(default: FALSE) Normalize the data matrix prior to scAlign (done once).}
 
 \item{early.stop}{(default: TRUE) Early stopping during network training.}
+
+\item{walker.loss}{(default: TRUE) Add walker loss to model.}
+
+\item{reconc.loss}{(default: FALSE) Add reconstruction loss to model during alignment.}
+
+\item{gpu.device}{(default: '0') Which gpu to use.}
 
 \item{seed}{(default: 1245) Sets graph level random seed in tensorflow.}
 }

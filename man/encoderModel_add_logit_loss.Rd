@@ -4,7 +4,7 @@
 \alias{encoderModel_add_logit_loss}
 \title{Add classifier loss component}
 \usage{
-encoderModel_add_logit_loss(logits, labels, weight = 1, smoothing = 0)
+encoderModel_add_logit_loss(logits, labels, weight = 1)
 }
 \arguments{
 \item{logits}{cell x label logits}

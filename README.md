@@ -7,7 +7,9 @@ A deep learning-based tool for alignment and integration of single cell genomic 
 
 ## Updates
 
-TODO: Finalize partial labels code. (ETA: 3/25/19)
+DONE: Finalize partial labels code. 
+
+-- To use partial labels, set unlabeled elements of label vectors to NA.
 
 TODO: Supervised and partially supervised tutorial.
 

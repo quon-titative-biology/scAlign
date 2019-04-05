@@ -74,13 +74,9 @@ encoderModel_add_semisup_loss_data_driven = function(p_target, a, b, data_shape,
 #'
 #' @keywords internal
 encoderModel_add_logit_loss = function(logits, labels, weight=1.0){
-   if(any(labels == NA)){
-     print("==============================================================")
-     print("== Found missing labels, setting up partial label classfier ==")
-     print("==============================================================")
-     ## points without labels should have a label value of 0, so 0 weight.
-     weight = tf$clip_by_value(labels, 0, 1)
-   }
+   weights = tf$clip_by_value(labels, as.integer(0), as.integer(1))
+   weight = tf$math$multiply(tf$cast(weights,dtype=tf$float32), weight)
+   tf$summary$histogram('weights_label', weight)
    ## Add clossifier
    with(tf$name_scope('loss_classifier'), {
        logit_loss = tf$losses$softmax_cross_entropy(
@@ -90,6 +86,7 @@ encoderModel_add_logit_loss = function(logits, labels, weight=1.0){
            weights=weight)
        # self.add_average(logit_loss)
        tf$summary$scalar('Loss_Logit', logit_loss)
+       tf$summary$histogram('logits', logits)
        logit_loss = tf$Print(logit_loss, list(logit_loss), message="class: ")
    })
 }
@@ -97,13 +94,13 @@ encoderModel_add_logit_loss = function(logits, labels, weight=1.0){
 #' Guassian kernel
 #'
 #' Tensorflow implementation of tsne's gaussian_kernel, accepts tensors of
-#' float64 (for precision) and (should return float32)
+#' float64 (for precision) and returns tensors of float32
 #'
 #' @return Tensorflow op
 #'
 #' @param data cell x feature data matrix
 #' @param data_b second cell x feature data matrix, if none provided then data_b = data
-#' @param dimen number of cells in of mini-batch
+#' @param dim number of cells in of mini-batch
 #' @param perplexity neighborhood parameter for gaussian kernel
 #' @param method distance metric prior to computing probabilities
 #' @param diag indicator for self similarity
@@ -111,7 +108,7 @@ encoderModel_add_logit_loss = function(logits, labels, weight=1.0){
 #' @import tensorflow
 #'
 #' @keywords internal
-encoderModel_gaussian_kernel = function(data, data_b=NULL, dimen, perplexity=30, method="euclidean", diag="zero"){
+encoderModel_gaussian_kernel = function(data, data_b=NULL, dim, perplexity=30, method="euclidean", diag="zero"){
   with(tf$name_scope("gaussian_kernel"), {
     if(is.null(data_b)){data_b = data}
 
@@ -122,11 +119,11 @@ encoderModel_gaussian_kernel = function(data, data_b=NULL, dimen, perplexity=30,
     perplexity = tf$log(tf$constant(perplexity, dtype=tf$float64))
 
     ## Variables used in binary search
-    betas      = tf$ones(shape(dimen), dtype=tf$float64, name="betas")
-    p_ij       = tf$ones(shape(dimen,dimen), dtype=tf$float64, name="p_ij")
-    p_ij_unnorm = tf$ones(shape(dimen,dimen), dtype=tf$float64, name="p_ij_unnorm")
-    beta_min   = tf$fill(dims=shape(dimen), value=tf$negative(INFINITY))
-    beta_max   = tf$fill(dims=shape(dimen), value=INFINITY)
+    betas      = tf$ones(shape(dim), dtype=tf$float64, name="betas")
+    p_ij       = tf$ones(shape(dim,dim), dtype=tf$float64, name="p_ij")
+    p_ij_unnorm = tf$ones(shape(dim,dim), dtype=tf$float64, name="p_ij_unnorm")
+    beta_min   = tf$fill(dims=shape(dim), value=tf$negative(INFINITY))
+    beta_max   = tf$fill(dims=shape(dim), value=INFINITY)
 
     ## distances
     if(method == "euclidean"){
@@ -145,14 +142,14 @@ encoderModel_gaussian_kernel = function(data, data_b=NULL, dimen, perplexity=30,
       step = tf$add(step, tf$constant(1))
       ## Compute probabilities
       p_ij = tf$exp(tf$multiply(tf$negative(affinities), tf$reshape(betas, shape(-1,1))))
-      p_ij = tf$reshape(p_ij, shape(dimen, dimen)) ## tensorflow R requires this?
+      p_ij = tf$reshape(p_ij, shape(dim, dim)) ## tensorflow R requires this?
       ## Reset exp(0)'s to 0
       if(diag == "zero"){
-        p_ij = tf$matrix_set_diag(p_ij, tf$cast(tf$zeros(shape(dimen)), tf$float64))
+        p_ij = tf$matrix_set_diag(p_ij, tf$cast(tf$zeros(shape(dim)), tf$float64))
       }
 
       sum_pij = tf$reduce_sum(p_ij, axis=as.integer(-1))
-      sum_pij = tf$where(tf$equal(sum_pij, tf$constant(0, dtype=tf$float64)), tf$fill(dims=shape(dimen), value=EPSILON_DBL), sum_pij)
+      sum_pij = tf$where(tf$equal(sum_pij, tf$constant(0, dtype=tf$float64)), tf$fill(dims=shape(dim), value=EPSILON_DBL), sum_pij)
 
       p_ij_unnorm = p_ij
       ## Normalize
@@ -213,9 +210,9 @@ encoderModel_gaussian_kernel = function(data, data_b=NULL, dimen, perplexity=30,
 #' @import tensorflow
 #'
 #' @keywords internal
-encoderModel_data_to_embedding = function(model_func, data, is_training=TRUE){
+encoderModel_data_to_embedding = function(model_func, data, is_training=TRUE, scope=''){
   ## Create a graph, transforming data into embeddings
-  with(tf$name_scope('data_to_emb_net'), {
+  with(tf$name_scope(paste0('data_to_emb_net', scope)), {
     with(tf$variable_scope('net', reuse=is_training), {
       return(model_func(data, is_training=is_training))
     })
@@ -270,6 +267,27 @@ encoderModel_calc_embedding = function(sess, data, endpoint, test_in, FLAGS, bat
     emb[i:ix_end,] = sess$run(endpoint, dict(test_in=data[i:ix_end,]))
   }
   return(emb)
+}
+
+#' Compute embedding for complete data after training
+#'
+#' Takes the high dimensional data through the neural network to embedding layer
+#'
+#' @return Aligned data embedding
+#'
+#' @param sess Current tensorflow session
+#' @param data Input matrix or tensor to reduce to embedding space
+#' @param endpoint Operation to evaluate in the graph
+#' @param test_in Placeholder to process full data in batches
+#' @param batch_size how many cells per each batch
+#' @param FLAGS Tensorflow run arguments
+#'
+#' @import tensorflow
+#'
+#' @keywords internal
+encoderModel_calc_logit = function(sess, emb, endpoint, test_logit_in, FLAGS){
+  logit =  sess$run(endpoint, dict(test_logit_in=emb))
+  return(logit)
 }
 
 # ## Compute logit scores

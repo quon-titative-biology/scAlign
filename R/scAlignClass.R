@@ -55,9 +55,9 @@
 scAlignCreateObject = function(sce.objects,
                                labels = list(),
                                meta.data = NULL,
-                               pca.reduce = TRUE,
+                               pca.reduce = FALSE,
                                pcs.compute = 20,
-                               cca.reduce = TRUE,
+                               cca.reduce = FALSE,
                                ccs.compute = 15,
                                data.use = "scale.data",
                                project.name = "scAlignProject"){
@@ -74,39 +74,45 @@ scAlignCreateObject = function(sce.objects,
   if(is.null(names(sce.objects))){ names(sce.objects) = paste0("dataset", seq_len(length(sce.objects))) }
   if(!is.list(labels)) { stop("labels must be a list.") }
 
-  if(length(sce.objects)==2){
-    ## Combine data into a common SCE
-    combined.sce = cbind(sce.objects[[names(sce.objects)[1]]], sce.objects[[names(sce.objects)[2]]])
-    ## Determines dataset split
-    colData(combined.sce)[,"group.by"] = c(rep(names(sce.objects)[1], ncol(sce.objects[[names(sce.objects)[1]]])),
-                                                    rep(names(sce.objects)[2], ncol(sce.objects[[names(sce.objects)[2]]])))
-    tryCatch({
-      ## Set labels to be used in supervised training or defaults
-      colData(combined.sce)[,"scAlign.labels"] = if(length(unlist(labels)) == 0) rep("NA", nrow(colData(combined.sce))) else as.integer(factor(unlist(labels)))
-      colData(combined.sce)[,"scAlign.labels"][is.na(colData(combined.sce)[,"scAlign.labels"])] = 0
-    }, error=function(e){print("Error converting labels to factors."); stop(e);})
-    if(length(colData(combined.sce)[,"scAlign.labels"]) < nrow(colData(combined.sce))) { stop("Not enough labels for all cells.") }
-    metadata(combined.sce)[["arguments"]] = data.frame(encoder.data=character(),
-                                             decoder.data=character(),
-                                             supervised=character(),
-                                             run.encoder=logical(),
-                                             run.decoder=logical(),
-                                             log.dir=character(),
-                                             log.results=logical(),
-                                             device=character(), stringsAsFactors=FALSE)
-    metadata(combined.sce)[["options"]]  = data.frame(steps=integer(),
-                                            batch.size=integer(),
-                                            learning.rate=numeric(),
-                                            log.every=integer(),
-                                            architecture=character(),
-                                            num.dim=integer(),
-                                            perplexity=integer(),
-                                            norm=logical(),
-                                            early.stop=logical(),
-                                            seed=integer(), stringsAsFactors=FALSE)
-  }else{
-    stop("Implementation of multi (>2) dataset alignment still in progress.")
+  # if(length(sce.objects)==2
+  ## Combine data into a common SCE
+  combined.sce = Reduce(cbind, sce.objects)
+  ## Ensure all objects are SCE
+  if(class(combined.sce) != "SingleCellExperiment"){
+    stop("Unsupported or inconsistent input type(s): Must be SingleCellExperiment objects")
   }
+  ## Determines dataset split
+  group.by=c()
+  for(name in names(sce.objects)){
+    group.by = c(group.by, rep(name, ncol(sce.objects[[name]])))
+  }
+  colData(combined.sce)[,"group.by"] = group.by
+  ## Set cell labels
+  tryCatch({
+    ## Set labels to be used in supervised training or defaults
+    colData(combined.sce)$scAlign.labels.orig = unlist(labels)
+    colData(combined.sce)[,"scAlign.labels"] = if(length(unlist(labels)) == 0) rep("NA", nrow(colData(combined.sce))) else (as.integer(factor(unlist(labels)))-1)
+    colData(combined.sce)[,"scAlign.labels"][is.na(colData(combined.sce)[,"scAlign.labels"])] = -1
+  }, error=function(e){print("Error converting labels to factors."); stop(e);})
+  if(length(colData(combined.sce)[,"scAlign.labels"]) < nrow(colData(combined.sce))) { stop("Not enough labels for all cells.") }
+  metadata(combined.sce)[["arguments"]] = data.frame(encoder.data=character(),
+                                           decoder.data=character(),
+                                           supervised=character(),
+                                           run.encoder=logical(),
+                                           run.decoder=logical(),
+                                           log.dir=character(),
+                                           log.results=logical(),
+                                           device=character(), stringsAsFactors=FALSE)
+  metadata(combined.sce)[["options"]]  = data.frame(steps=integer(),
+                                          batch.size=integer(),
+                                          learning.rate=numeric(),
+                                          log.every=integer(),
+                                          architecture=character(),
+                                          num.dim=integer(),
+                                          perplexity=integer(),
+                                          norm=logical(),
+                                          early.stop=logical(),
+                                          seed=integer(), stringsAsFactors=FALSE)
 
   ## Ensure data to be used for dimensionality reduction is available
   if(is.element(data.use, names(assays(combined.sce))) == FALSE){ stop("data.use is not reachable in assays.") }
@@ -122,7 +128,7 @@ scAlignCreateObject = function(sce.objects,
   }
 
   ## Reduce to top ccs
-  if(cca.reduce == TRUE){
+  if(cca.reduce == TRUE & (length(sce.objects) == 2)){
     print(paste("Computing CCA using Seurat."))
     ## Run Seurat normalization
     for(name in names(sce.objects)){
@@ -138,6 +144,8 @@ scAlignCreateObject = function(sce.objects,
     ## Load dim reduction into SCE object
     reducedDim(combined.sce, "CCA") = GetCellEmbeddings(combined, "cca")
     metadata(combined.sce)[["CCA.output"]] = GetGeneLoadings(combined, reduction.type = "cca")
+  }else if(cca.reduce == TRUE & length(sce.objects) > 2){
+    print("Please run multi-dataset CCA manually, CCA was not computed.")
   }
   return(combined.sce)
 }
@@ -160,6 +168,8 @@ scAlignCreateObject = function(sce.objects,
 #' @param early.stop (default: TRUE) Early stopping during network training.
 #' @param walker.loss (default: TRUE) Add walker loss to model.
 #' @param reconc.loss (default: FALSE) Add reconstruction loss to model during alignment.
+#' @param walker.weight (default: 1.0) Weight on walker loss component
+#' @param classifier.weight (default: 1.0) Weight on classifier loss component
 #' @param gpu.device (default: '0') Which gpu to use.
 #' @param seed (default: 1245) Sets graph level random seed in tensorflow.
 #
@@ -178,12 +188,13 @@ scAlignOptions = function(steps = 15000, batch.size = 150,
                           norm = TRUE, full.norm = FALSE,
                           early.stop = TRUE,
                           walker.loss = TRUE, reconc.loss = FALSE,
+                          walker.weight = 1.0, classifier.weight = 1.0,
                           gpu.device = '0',
                           seed = 1234){
 
      valid_opts = c("steps", "batch.size", "learning.rate", "log.every", "architecture",
                    "num.dim", "perplexity", "norm", "full.norm", "early.stop", "walker.loss",
-                   "reconc.loss", "gpu.device", "seed")
+                   "reconc.loss", "walker.weight", "classifier.weight", "gpu.device", "seed")
      opts = data.frame(steps = steps,
                        batch.size = batch.size,
                        learning.rate = learning.rate,
@@ -196,6 +207,8 @@ scAlignOptions = function(steps = 15000, batch.size = 150,
                        early.stop = early.stop,
                        walker.loss = walker.loss,
                        reconc.loss = reconc.loss,
+                       walker.weight = walker.weight,
+                       classifier.weight = classifier.weight,
                        gpu.device = as.character(gpu.device),
                        seed = seed,
                        stringsAsFactors=FALSE)

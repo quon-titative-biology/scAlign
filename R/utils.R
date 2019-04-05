@@ -100,6 +100,48 @@ PlotTSNE = function(object, data.use, labels.use="scAlign.labels", cols=NULL, ti
     })
 }
 
+#' Computes gaussian kernel matrix
+#'
+#' Tensorflow implementation of tSNE's gaussian kernel.
+#'
+#' @return Tensorflow op
+#'
+#' @param data cell x feature data matrix
+#' @param data_shape number of features for data
+#' @param labels cell x 1 annotation (label) vector
+#' @param method Kernel to compute pairwise cell similarity
+#' @param perplexity neighborhood parameter for gaussian kernel
+#' @param diag indicator for self similarity
+#'
+#' @examples
+#'
+#' ## Input data, 100 cells x 10 features
+#' data = matrix(sample.int(1000, 100*10, TRUE), 100, 10)
+#' rownames(data) = paste0("cell", seq_len(100))
+#' colnames(data) = paste0("gene", seq_len(10))
+#'
+#' result = compute_kernel_matrix(data, ncol(data))
+#'
+#' @import tensorflow
+#'
+#' @export
+gaussianKernel = function(data, data_shape, labels=NULL, method=NULL, perplexity=30, diag="zero"){
+  ## Hardware configurations for GPU if enabled
+  config = tf$ConfigProto(gpu_options = tf$GPUOptions(allow_growth=TRUE),
+                          allow_soft_placement=TRUE,
+                          log_device_placement=FALSE,
+                          device_count = dict('GPU', 1))
+  sess = NULL ## Appease R check
+  with(tf$Session(config=config) %as% sess, {
+    data=tf$cast(data, tf$float64)
+    data = tf$nn$l2_normalize(data, axis=as.integer(1))
+    ## Defines the similarity matrix T used for asssociation loss
+    kernel = encoderModel_gaussian_kernel(data, dim=data_shape, perplexity=perplexity, diag=diag)
+    ## Cast down for consistent data type
+    return(sess$run(tf$cast(kernel, tf$float32)))
+  })
+}
+
 #' Check for whole number
 #'
 #' @return Boolean
@@ -158,16 +200,19 @@ PlotTSNE = function(object, data.use, labels.use="scAlign.labels", cols=NULL, ti
   arguments = metadata(sce.object)[["arguments"]]
 
   ## Ensure data to be used for encoder is available
-  if((is.element(arguments[,"encoder.data"], names(assays(sce.object))) ||
-      is.element(arguments[,"encoder.data"], names(reducedDims(sce.object)))) == FALSE){
-        stop("encoder.data is not reachable in assays or reducedDims slots of combined SCE object.")
-      }
-
+  for(element in arguments[,"encoder.data"]){
+    if((is.element(element, names(assays(sce.object))) ||
+        is.element(element, names(reducedDims(sce.object)))) == FALSE){
+          stop(paste0(element, " is not reachable in assays or reducedDims slots of combined SCE object."))
+        }
+  }
   ## Ensure data to be used for decoder is available
-  if((is.element(arguments[,"decoder.data"], names(assays(sce.object))) ||
-      is.element(arguments[,"decoder.data"], names(reducedDims(sce.object)))) == FALSE){
-        stop("decoder.data is not reachable in assays or reducedDims slots of combined SCE object.")
-      }
+  for(element in arguments[,"decoder.data"]){
+    if((is.element(element, names(assays(sce.object))) ||
+        is.element(element, names(reducedDims(sce.object)))) == FALSE){
+          stop(paste0(element, " is not reachable in assays or reducedDims slots of combined SCE object."))
+        }
+  }
 
   ## Parameter check
   if (!is.character(arguments[,"supervised"]) || !is.element(arguments[,"supervised"], c("none", names(assays(sce.object)), "both"))) { stop("supervised should be \"none\", \"[object.name(s)]\" or \"both\".") }

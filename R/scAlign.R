@@ -3,7 +3,7 @@
 #'
 #' Main function for scAlign that runs encoder and decoder networks
 #'
-#' @return scAlign class
+#' @return SingleCellExperiment
 #'
 #' @param sce.object scAlign object.
 #' @param options Training options for scAlign.
@@ -136,13 +136,13 @@ scAlign = function(sce.object,
       tensorflow::flag_integer('unsup_batch_size', options$batch.size, 'Number of unlabeled samples per batch.'),
       tensorflow::flag_numeric('learning_rate', options$learning.rate, 'Initial learning rate.'),
       tensorflow::flag_numeric('minimum_learning_rate', 1e-8, 'Lower bound for learning rate.'),
-      tensorflow::flag_numeric('decay_factor', 0.33, 'Learning rate decay factor.'),
+      tensorflow::flag_numeric('decay_factor', 0.2, 'Learning rate decay factor.'),
       tensorflow::flag_numeric('decay_steps', floor((3/5)*options$steps), 'Learning rate decay interval in steps.'),
       tensorflow::flag_integer('max_steps', options$steps, 'Number of training steps.'),
       tensorflow::flag_integer('max_steps_decoder', options$steps, 'Number of training steps.'),
       tensorflow::flag_integer('random_seed', options$seed, 'Integer random seed used for labeled set selection.'),
       ## Loss function: walker loss for object1 ##
-      tensorflow::flag_numeric('walker_weight', 1.0, 'Weight for walker loss.'),
+      tensorflow::flag_numeric('walker_weight', options$walker.weight, 'Weight for walker loss.'),
       tensorflow::flag_string('walker_weight_envelope', 'None', 'Increase walker weight with an envelope: [None, sigmoid, linear]'),
       tensorflow::flag_integer('walker_weight_envelope_steps', 1, 'Number of steps (after delay), at which envelope saturates.'),
       tensorflow::flag_integer('walker_weight_envelope_delay', 1, 'Number of steps at which envelope starts.'),
@@ -154,7 +154,7 @@ scAlign = function(sce.object,
       tensorflow::flag_integer('target_walker_weight_envelope_delay', 1, 'Number of steps at which envelope starts. -1 = follow walker loss env.'),
       ## Loss function: classifier ##
       tensorflow::flag_string('supervised', arguments$supervised, 'What type of classifier to run during training'),
-      tensorflow::flag_numeric('logit_weight', 1.0, 'Weight for logit loss.'),
+      tensorflow::flag_numeric('logit_weight', options$classifier.weight, 'Weight for logit loss.'),
       ## Loss function: visit (currently unused) ##
       tensorflow::flag_numeric('visit_weight', 0.0, 'Weight for visit loss.'),
       tensorflow::flag_string('visit_weight_envelope', 'None','Increase visit weight with an envelope: [None, sigmoid, linear]'),
@@ -218,10 +218,8 @@ scAlign = function(sce.object,
         aligned = encoderModel_train_encoder(FLAGS, 'alignment', config,
                                              num_labels, data_shape,
                                              object1.name, object2.name,
-                                             object1, as.integer(
-                                                        as.factor(colData(sce.object)[,"scAlign.labels"][object1.name == colData(sce.object)[,"group.by"]])),
-                                             object2, as.integer(
-                                                        as.factor(colData(sce.object)[,"scAlign.labels"][object2.name == colData(sce.object)[,"group.by"]])))
+                                             object1, as.integer(colData(sce.object)[,"scAlign.labels"][object1.name == colData(sce.object)[,"group.by"]]),
+                                             object2, as.integer(colData(sce.object)[,"scAlign.labels"][object2.name == colData(sce.object)[,"group.by"]]))
         reducedDim(sce.object, paste0("ALIGNED-", data.use)) = aligned[[1]]
         metadata(sce.object)[[paste0("LOSS-", data.use)]] = aligned[[2]]
       }

@@ -9,7 +9,8 @@ A deep learning-based tool for alignment and integration of single cell genomic 
 
 DONE: Finalize partial labels code. 
 
--- To use partial labels: set unlabeled cells to be NA in the label vector passed to scAlign.
+Updated and validated (4/8/19)
+-- To use partial labels: set unlabeled cells to be -1 in the label vector passed to scAlign. Specially, the scAlign.labels slot of the combined SCE object.
 
 TODO: Supervised and partially supervised tutorial.
 

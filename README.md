@@ -16,6 +16,10 @@ A deep learning-based tool for alignment and integration of single cell genomic 
 #### TODO: Supervised and partially supervised tutorial.
 #### TODO: Pancreas islet multi-dataset alignment.
 
+## R Package and Bioconductor
+
+Bioconductor for now will only support the Linux version of scAlign. For Windows and Mac please download the package directly from [github](https://github.com/quon-titative-biology/).
+
 ## Package requirements
 
 Guide to installing python and tensorflow on different operating systems.

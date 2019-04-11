@@ -7,13 +7,14 @@ A deep learning-based tool for alignment and integration of single cell genomic 
 
 ## Updates
 
-DONE: Finalize partial labels code. 
+#### (4/11/2019) Multi-dataset alignment added to github. Tutorial following shortly.
 
-Updated and validated (4/8/19)
+#### (4/8/2019) Partial labels support.
 
--- To use partial labels: set unlabeled cells to be NA in the label vector passed to `scAlignCreateObject`. Specially, the scAlign.labels slot of the combined SCE object.
+-- To use partial labels: set unlabeled cells to be NA in the label vector passed to `scAlignCreateObject`.
 
-TODO: Supervised and partially supervised tutorial.
+#### TODO: Supervised and partially supervised tutorial.
+#### TODO: Pancreas islet multi-dataset alignment.
 
 ## Package requirements
 

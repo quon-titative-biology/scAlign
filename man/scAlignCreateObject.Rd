@@ -5,7 +5,7 @@
 \title{Creates scAlign object}
 \usage{
 scAlignCreateObject(sce.objects, labels = list(), meta.data = NULL,
-  pca.reduce = TRUE, pcs.compute = 20, cca.reduce = TRUE,
+  pca.reduce = FALSE, pcs.compute = 20, cca.reduce = FALSE,
   ccs.compute = 15, data.use = "scale.data",
   project.name = "scAlignProject")
 }

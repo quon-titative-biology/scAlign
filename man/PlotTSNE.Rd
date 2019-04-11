@@ -65,7 +65,10 @@ Helper function to plot aligned data from the results of running scAlign().
 
  ## Run scAlign with high_var_genes
  scAlignHSC = scAlign(scAlignHSC,
-                    options=scAlignOptions(steps=100, log.every=100, norm=TRUE, early.stop=FALSE),
+                    options=scAlignOptions(steps=100,
+                                           log.every=100,
+                                           norm=TRUE,
+                                           early.stop=FALSE),
                     encoder.data="scale.data",
                     supervised='none',
                     run.encoder=TRUE,
@@ -75,6 +78,10 @@ Helper function to plot aligned data from the results of running scAlign().
                     device="CPU")
 
  ## Plot alignment for 3 input types
- example_plot = PlotTSNE(scAlignHSC, "ALIGNED-GENE", "scAlign.labels", title="scAlign-Gene", perplexity=30)
+ example_plot = PlotTSNE(scAlignHSC,
+                           "ALIGNED-GENE",
+                           "scAlign.labels",
+                           title="scAlign-Gene",
+                           perplexity=30)
 
 }

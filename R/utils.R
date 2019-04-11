@@ -50,7 +50,10 @@
 #'
 #'  ## Run scAlign with high_var_genes
 #'  scAlignHSC = scAlign(scAlignHSC,
-#'                     options=scAlignOptions(steps=100, log.every=100, norm=TRUE, early.stop=FALSE),
+#'                     options=scAlignOptions(steps=100,
+#'                                            log.every=100,
+#'                                            norm=TRUE,
+#'                                            early.stop=FALSE),
 #'                     encoder.data="scale.data",
 #'                     supervised='none',
 #'                     run.encoder=TRUE,
@@ -60,7 +63,11 @@
 #'                     device="CPU")
 #'
 #'  ## Plot alignment for 3 input types
-#'  example_plot = PlotTSNE(scAlignHSC, "ALIGNED-GENE", "scAlign.labels", title="scAlign-Gene", perplexity=30)
+#'  example_plot = PlotTSNE(scAlignHSC,
+#'                            "ALIGNED-GENE",
+#'                            "scAlign.labels",
+#'                            title="scAlign-Gene",
+#'                            perplexity=30)
 #'
 #' @export
 PlotTSNE = function(object, data.use, labels.use="scAlign.labels", cols=NULL, title="", legend="none", seed=1234, ...){
@@ -120,7 +127,7 @@ PlotTSNE = function(object, data.use, labels.use="scAlign.labels", cols=NULL, ti
 #' rownames(data) = paste0("cell", seq_len(100))
 #' colnames(data) = paste0("gene", seq_len(10))
 #'
-#' result = compute_kernel_matrix(data, ncol(data))
+#' result = gaussianKernel(data, nrow(data))
 #'
 #' @import tensorflow
 #'
@@ -186,6 +193,24 @@ gaussianKernel = function(data, data_shape, labels=NULL, method=NULL, perplexity
                          legend.title=element_blank(),
                          legend.text=element_text(size=rel(3.0)))
     ggsave(tsne.plot, filename=file_out, width=14, height=12)
+}
+
+#' Computes alignment score
+#'
+#' @return Boolean
+#'
+#' @import FNN
+#'
+#' @keywords internal
+alignment_score <- function(data, source_labels, target_labels, nn=0){
+  dist = c(rep("source", length(source_labels)), rep("target", length(target_labels)))
+  if(nn == 0){nn = ceiling(nrow(data) * 0.01 * 2)}
+  object.fnn <- get.knn(data, k=nn)
+  alignment.score = sapply(seq_len(row(data)), function(x) {
+    length(which(dist[object.fnn$nn.index[x, ]] == dist[x]))
+  })
+  alignment.score = 1-((mean(alignment.score)-nn/2)/(nn-nn/2))
+  return(alignment.score)
 }
 
 #' Check arguments

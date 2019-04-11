@@ -31,7 +31,7 @@ scAlign(sce.object, options = scAlignOptions(), encoder.data,
 \item{device}{Specify hardware to use. May not work on all systems, manually set CUDA_VISIBLE_DEVICES if necessary.}
 }
 \value{
-scAlign class
+SingleCellExperiment
 }
 \description{
 Main function for scAlign that runs encoder and decoder networks

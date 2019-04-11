@@ -39,7 +39,7 @@ compute_kernel_matrix = function(data, data_shape, labels=NULL, method=NULL, per
 #'
 #' @import tensorflow
 #' @import purrr
-#' @import class
+#' @import FNN
 #'
 #' @keywords internal
 encoderModel_train_encoder = function(FLAGS, CV, config,
@@ -144,6 +144,8 @@ encoderModel_train_encoder = function(FLAGS, CV, config,
 
     ## Add classificaiton loss
     if(FLAGS$supervised != 'none'){
+        class_weight = tf$cond(tf$train$get_or_create_global_step() < FLAGS$logit_delay, function(){ return(0.0) }, function(){ return(FLAGS$logit_weight) })
+        tf$summary$scalar(paste0('classifier weight'), class_weight)
         ## source specific loss for classifier
         if(FLAGS$supervised == obj1_name){
             print("Adding source only classifier loss")
@@ -151,20 +153,20 @@ encoderModel_train_encoder = function(FLAGS, CV, config,
             logits = encoderModel_embedding_to_logit(source_emb, num_labels)
             encoderModel_add_logit_loss(logits,
                            source_batch[[2]],
-                           weight=FLAGS$logit_weight)
+                           weight=class_weight)
         }else if(FLAGS$supervised == obj2_name){
             print("Adding target only classifier loss")
             ## Compute unnormalized class probabilities
             logits = encoderModel_embedding_to_logit(target_emb, num_labels)
             encoderModel_add_logit_loss(logits,
                            target_batch[[2]],
-                           weight=FLAGS$logit_weight)
+                           weight=class_weight)
         }else if(FLAGS$supervised == 'both'){
             print("Adding both classifier loss")
             logits = encoderModel_embedding_to_logit(tf$concat(list(source_emb, target_emb), axis=as.integer(0)), num_labels)
             encoderModel_add_logit_loss(logits,
                            tf$concat(list(source_batch[[2]], target_batch[[2]]), axis=as.integer(0)),
-                           weight=FLAGS$logit_weight)
+                           weight=class_weight)
         }else{print("Invalid FLAGS$supervised"); quit("no");}
     }
 
@@ -295,7 +297,17 @@ encoderModel_train_encoder = function(FLAGS, CV, config,
           res = sess$run(list(train_op, summary_op, loss_op), feed_dict=dict(decay_step = 100))
         }
 
-        if(((step %% 100) == 0) | (step == 1)){ print(paste0("Step: ", step, "    Loss: ", round(res[[3]], 4))) }
+        if(((step %% 100) == 0) | (step == 1)){
+          emb = encoderModel_calc_embedding(sess, data_norm, test_emb, test_in, FLAGS)
+          align = alignment_score(emb, source_labels, target_labels)
+          if(FLAGS$supervised != "none"){
+            knn_model <- knn(emb[seq_len(length(source_labels)),], emb[(length(source_labels)+1):(length(source_labels)+length(target_labels)),], source_labels, k=5, prob=TRUE)
+            acc       <- length(which(as.character(knn_model) == target_labels))/length(target_labels)
+            print(paste0("Step: ", step, "    Loss: ", round(res[[3]], 4),  "    Alignment: ", round(align,4), "    Acc: ", round(acc,4)))
+          }else{
+            print(paste0("Step: ", step, "    Loss: ", round(res[[3]], 4),  "    Alignment: ", round(align,4)))
+          }
+        }
 
         ## Record loss
         loss_tracker[step] = as.numeric(res[[3]])
@@ -329,9 +341,6 @@ encoderModel_train_encoder = function(FLAGS, CV, config,
             label = sess$run(tf$one_hot(c(source_labels, target_labels), num_labels))
             write.table(label, file.path(paste0(FLAGS$logdir, '/model_', as.character(CV), '/train/one_hot_labels_', as.character(step), '.csv')), sep=",", col.names=FALSE, row.names=FALSE)
 
-            knn_model <- knn(emb[1:length(source_labels),], emb[(length(source_labels)+1):(length(source_labels)+length(target_labels)),], source_labels, k=5, prob=TRUE)
-            acc       <- length(which(as.character(knn_model) == target_labels))/length(target_labels)
-            print(paste0("Acc: ", acc))
             if((FLAGS$plot==TRUE) & (step > 1)){
               .plotTSNE(emb, as.character(c(source_labels, target_labels)), file_out=paste0(file.path(FLAGS$logdir, paste0('plots/type_step_', as.character(step), '.png'))))
             }

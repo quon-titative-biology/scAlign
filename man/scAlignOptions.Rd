@@ -4,10 +4,11 @@
 \alias{scAlignOptions}
 \title{Set training options}
 \usage{
-scAlignOptions(steps = 15000, batch.size = 150,
-  learning.rate = 1e-04, log.every = 5000, architecture = "small",
+scAlignOptions(steps = 15000, batch.size = 300,
+  learning.rate = 1e-04, log.every = 5000, architecture = "large",
   num.dim = 32, perplexity = 30, norm = TRUE, full.norm = FALSE,
-  early.stop = TRUE, walker.loss = TRUE, reconc.loss = FALSE,
+  early.stop = FALSE, walker.loss = TRUE, reconc.loss = FALSE,
+  walker.weight = 1, classifier.weight = 1, classifier.delay = NA,
   gpu.device = "0", seed = 1234)
 }
 \arguments{
@@ -34,6 +35,12 @@ scAlignOptions(steps = 15000, batch.size = 150,
 \item{walker.loss}{(default: TRUE) Add walker loss to model.}
 
 \item{reconc.loss}{(default: FALSE) Add reconstruction loss to model during alignment.}
+
+\item{walker.weight}{(default: 1.0) Weight on walker loss component}
+
+\item{classifier.weight}{(default: 1.0) Weight on classifier loss component}
+
+\item{classifier.delay}{(default: NULL) Delay classifier component of loss function until specific training step. Defaults to (2/3)*steps.}
 
 \item{gpu.device}{(default: '0') Which gpu to use.}
 

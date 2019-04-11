@@ -143,18 +143,13 @@ scAlign = function(sce.object,
       tensorflow::flag_integer('random_seed', options$seed, 'Integer random seed used for labeled set selection.'),
       ## Loss function: walker loss for object1 ##
       tensorflow::flag_numeric('walker_weight', options$walker.weight, 'Weight for walker loss.'),
-      tensorflow::flag_string('walker_weight_envelope', 'None', 'Increase walker weight with an envelope: [None, sigmoid, linear]'),
-      tensorflow::flag_integer('walker_weight_envelope_steps', 1, 'Number of steps (after delay), at which envelope saturates.'),
-      tensorflow::flag_integer('walker_weight_envelope_delay', 1, 'Number of steps at which envelope starts.'),
       tensorflow::flag_integer('leaky_weights', 0, 'If true: original weighting growth used (leaky during classifier pre-training), else walker weight is restricted to exactly 0 before walker_weight_envelope_delay.'),
       ## Loss function: walker loss for object2 ##
       tensorflow::flag_numeric('target_walker_weight', 1.0, 'Weight for target walker loss.'),
-      tensorflow::flag_string('target_walker_weight_envelope', 'None', 'Increase visit weight with an envelope: [None, sigmoid, linear]'),
-      tensorflow::flag_integer('target_walker_weight_envelope_steps', 1, 'Number of steps (after delay) at which envelope saturates. -1 = follow walker loss env.'),
-      tensorflow::flag_integer('target_walker_weight_envelope_delay', 1, 'Number of steps at which envelope starts. -1 = follow walker loss env.'),
       ## Loss function: classifier ##
       tensorflow::flag_string('supervised', arguments$supervised, 'What type of classifier to run during training'),
       tensorflow::flag_numeric('logit_weight', options$classifier.weight, 'Weight for logit loss.'),
+      tensorflow::flag_integer('logit_delay', if(is.na(options$classifier.delay)){floor((2/3)*options$steps)}else{options$classifier.delay}, 'Number of steps before classifier is added to loss function.'),
       ## Loss function: visit (currently unused) ##
       tensorflow::flag_numeric('visit_weight', 0.0, 'Weight for visit loss.'),
       tensorflow::flag_string('visit_weight_envelope', 'None','Increase visit weight with an envelope: [None, sigmoid, linear]'),

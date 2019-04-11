@@ -16,16 +16,16 @@ URL: https://github.com/quon-titative-biology/scAlign
 BugReports: https://github.com/quon-titative-biology/scAlign/issues
 biocViews: SingleCell, Transcriptomics, DimensionReduction, NeuralNetwork
 Depends: R (>= 3.5)
-Imports: SingleCellExperiment,
-         Seurat,
-	 tensorflow,
+Imports: SingleCellExperiment (>= 1.4),
+         Seurat (< 3.0),
+	       tensorflow,
 	 purrr,
          irlba,
 	 Rtsne,
 	 ggplot2,
 	 methods,
          utils,
-         class
+         FNN
 Suggests: knitr,
           rmarkdown,
           testthat

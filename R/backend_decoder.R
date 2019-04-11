@@ -81,7 +81,7 @@ decoderModel_add_mse_loss = function(proj, data, mode, debug=TRUE){
 #' @keywords internal
 decoderModel_create_train_op = function(learning_rate, step){
   ## Collect all loss components
-  train_loss    = tf$losses$get_total_loss()
+  train_loss = tf$losses$get_total_loss()
   ## Minimize loss function
   optimizer = tf$train$AdamOptimizer(learning_rate)
   train_op = optimizer$minimize(train_loss, step)

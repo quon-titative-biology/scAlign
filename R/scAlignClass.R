@@ -78,7 +78,7 @@ scAlignCreateObject = function(sce.objects,
   ## Combine data into a common SCE
   combined.sce = Reduce(cbind, sce.objects)
   ## Ensure all objects are SCE
-  if(class(combined.sce) != "SingleCellExperiment"){
+  if(!is(combined.sce, "SingleCellExperiment")){
     stop("Unsupported or inconsistent input type(s): Must be SingleCellExperiment objects")
   }
   ## Determines dataset split
@@ -170,6 +170,7 @@ scAlignCreateObject = function(sce.objects,
 #' @param reconc.loss (default: FALSE) Add reconstruction loss to model during alignment.
 #' @param walker.weight (default: 1.0) Weight on walker loss component
 #' @param classifier.weight (default: 1.0) Weight on classifier loss component
+#' @param classifier.delay (default: NULL) Delay classifier component of loss function until specific training step. Defaults to (2/3)*steps.
 #' @param gpu.device (default: '0') Which gpu to use.
 #' @param seed (default: 1245) Sets graph level random seed in tensorflow.
 #
@@ -181,20 +182,20 @@ scAlignCreateObject = function(sce.objects,
 #'                        architecture="large")
 #'
 #' @export
-scAlignOptions = function(steps = 15000, batch.size = 150,
+scAlignOptions = function(steps = 15000, batch.size = 300,
                           learning.rate = 1e-4, log.every = 5000,
-                          architecture="small",
+                          architecture="large",
                           num.dim = 32, perplexity = 30,
                           norm = TRUE, full.norm = FALSE,
-                          early.stop = TRUE,
+                          early.stop = FALSE,
                           walker.loss = TRUE, reconc.loss = FALSE,
                           walker.weight = 1.0, classifier.weight = 1.0,
-                          gpu.device = '0',
+                          classifier.delay=NA, gpu.device = '0',
                           seed = 1234){
 
      valid_opts = c("steps", "batch.size", "learning.rate", "log.every", "architecture",
                    "num.dim", "perplexity", "norm", "full.norm", "early.stop", "walker.loss",
-                   "reconc.loss", "walker.weight", "classifier.weight", "gpu.device", "seed")
+                   "reconc.loss", "walker.weight", "classifier.weight", "classifier.delay", "gpu.device", "seed")
      opts = data.frame(steps = steps,
                        batch.size = batch.size,
                        learning.rate = learning.rate,
@@ -209,6 +210,7 @@ scAlignOptions = function(steps = 15000, batch.size = 150,
                        reconc.loss = reconc.loss,
                        walker.weight = walker.weight,
                        classifier.weight = classifier.weight,
+                       classifier.delay = classifier.delay,
                        gpu.device = as.character(gpu.device),
                        seed = seed,
                        stringsAsFactors=FALSE)

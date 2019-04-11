@@ -4,15 +4,15 @@
 \alias{encoderModel_gaussian_kernel}
 \title{Guassian kernel}
 \usage{
-encoderModel_gaussian_kernel(data, data_b = NULL, dimen,
-  perplexity = 30, method = "euclidean", diag = "zero")
+encoderModel_gaussian_kernel(data, data_b = NULL, dim, perplexity = 30,
+  method = "euclidean", diag = "zero")
 }
 \arguments{
 \item{data}{cell x feature data matrix}
 
 \item{data_b}{second cell x feature data matrix, if none provided then data_b = data}
 
-\item{dimen}{number of cells in of mini-batch}
+\item{dim}{number of cells in of mini-batch}
 
 \item{perplexity}{neighborhood parameter for gaussian kernel}
 
@@ -25,6 +25,6 @@ Tensorflow op
 }
 \description{
 Tensorflow implementation of tsne's gaussian_kernel, accepts tensors of
-float64 (for precision) and (should return float32)
+float64 (for precision) and returns tensors of float32
 }
 \keyword{internal}

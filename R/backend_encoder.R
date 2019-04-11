@@ -77,7 +77,6 @@ encoderModel_add_logit_loss = function(logits, labels, weight=1.0){
    weights = tf$clip_by_value(tf$math$add(labels, tf$constant(as.integer(1), dtype=tf$int32)), as.integer(0), as.integer(1))
    weight = tf$math$multiply(tf$cast(weights,dtype=tf$float32), weight)
    tf$summary$histogram('weights_label', weight)
-   tf$summary$histogram('weights_label', weight)
    ## Add clossifier
    with(tf$name_scope('loss_classifier'), {
        logit_loss = tf$losses$softmax_cross_entropy(

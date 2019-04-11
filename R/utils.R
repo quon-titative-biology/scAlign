@@ -206,7 +206,7 @@ alignment_score <- function(data, source_labels, target_labels, nn=0){
   dist = c(rep("source", length(source_labels)), rep("target", length(target_labels)))
   if(nn == 0){nn = ceiling(nrow(data) * 0.01 * 2)}
   object.fnn <- get.knn(data, k=nn)
-  alignment.score = sapply(seq_len(row(data)), function(x) {
+  alignment.score = sapply(seq_len(nrow(data)), function(x) {
     length(which(dist[object.fnn$nn.index[x, ]] == dist[x]))
   })
   alignment.score = 1-((mean(alignment.score)-nn/2)/(nn-nn/2))

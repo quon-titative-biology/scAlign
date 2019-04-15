@@ -20,11 +20,11 @@ A deep learning-based tool for alignment and integration of single cell genomic 
 
 Bioconductor for now will only support the Linux version of scAlign. For Windows and Mac please download/install the package directly from [github](https://github.com/quon-titative-biology/). 
 
-`install.packages('devtools')
-
+```
+install.packages('devtools')
 devtools::install_github(repo = 'quon-titative-biology/scAlign')
-
-library(scAlign)`
+library(scAlign)
+```
 
 ## Package requirements
 

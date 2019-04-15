@@ -132,18 +132,31 @@ scAlignCreateObject = function(sce.objects,
     print(paste("Computing CCA using Seurat."))
     ## Run Seurat normalization
     for(name in names(sce.objects)){
-      sce.objects[[name]] = CreateSeuratObject(raw.data = assay(sce.objects[[name]], data.use), project = name, min.cells = 0)
+      sce.objects[[name]] = CreateSeuratObject(assay(sce.objects[[name]], data.use), project = name)
       sce.objects[[name]] = ScaleData(sce.objects[[name]], do.center=TRUE, do.scale=TRUE)
     }
-    ## Reduce from gene to cc space
-    combined = RunCCA(sce.objects[[names(sce.objects)[1]]],
-                      sce.objects[[names(sce.objects)[2]]],
-                      genes.use=rownames(combined.sce),
-                      num.cc=ccs.compute,
-                      scale.data=TRUE)
-    ## Load dim reduction into SCE object
-    reducedDim(combined.sce, "CCA") = GetCellEmbeddings(combined, "cca")
-    metadata(combined.sce)[["CCA.output"]] = GetGeneLoadings(combined, reduction.type = "cca")
+    ## Functional changes due to seurat version
+    if(packageVersion("Seurat") >= 3.0){
+      ## Reduce from gene to cc space
+      combined = RunCCA(sce.objects[[names(sce.objects)[1]]],
+                        sce.objects[[names(sce.objects)[2]]],
+                        features=rownames(combined.sce),
+                        num.cc=ccs.compute,
+                        scale.data=TRUE)
+      ## Load dim reduction into SCE object
+      reducedDim(combined.sce, "CCA") =  Embeddings(combined, reduction = "cca")
+      metadata(combined.sce)[["CCA.output"]] = Loadings(combined, reduction = "cca")
+    }else{
+      ## Reduce from gene to cc space
+      combined = RunCCA(sce.objects[[names(sce.objects)[1]]],
+                        sce.objects[[names(sce.objects)[2]]],
+                        genes.use=rownames(combined.sce),
+                        num.cc=ccs.compute,
+                        scale.data=TRUE)
+      ## Load dim reduction into SCE object
+      reducedDim(combined.sce, "CCA") = GetCellEmbeddings(combined, "cca")
+      metadata(combined.sce)[["CCA.output"]] = GetGeneLoadings(combined, reduction.type = "cca")
+    }
   }else if(cca.reduce == TRUE & length(sce.objects) > 2){
     print("Please run multi-dataset CCA manually, CCA was not computed.")
   }

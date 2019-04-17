@@ -41,7 +41,7 @@ test_that("Alignment produces consistent results", {
 
   library(scAlign)
   library(SingleCellExperiment)
-  library(class)
+  library(FNN)
   library(ggplot2)
 
   ## Load in cellbench data
@@ -91,7 +91,7 @@ test_that("Alignment produces consistent results", {
   aligned_SORT   = aligned_data[which(batch == "SORT"),]
 
   class_res = knn(aligned_CEL, aligned_SORT, mix.types[which(batch == "CEL")], k=15)
-  class_acc = mean(class_res == mix.types[which(batch == "SORT")])
+  class_acc = mean(as.character(class_res) == mix.types[which(batch == "SORT")])
   expect_gte(class_acc, 0.5)
 
 })

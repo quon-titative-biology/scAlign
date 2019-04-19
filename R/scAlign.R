@@ -254,14 +254,14 @@ scAlign = function(sce.object,
                                                        object1,
                                                        data_embed_source, emb_dataset)
 
-        reducedDim(sce.object, paste0(object1.name, "2", object2.name)) = projected
+        reducedDim(sce.object, paste0(object2.name, "2", object1.name)) = projected
 
         print(paste0("============== Step 3/3: ", object2.name ," decoder training ==============="))
         projected = decoderModel_train_decoder(FLAGS, config, object2.name,
                                                        object2,
                                                        data_embed_target, emb_dataset)
 
-        reducedDim(sce.object, paste0(object2.name, "2", object1.name)) = projected
+        reducedDim(sce.object, paste0(object1.name, "2", object2.name)) = projected
       }
     }, error=function(e){
       print("Error during interpolation, returning scAlign class.")

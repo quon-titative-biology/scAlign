@@ -310,7 +310,7 @@ decoder_large = function(inputs,
                           bias_initializer=tf$ones_initializer(),
                           name='fc1')
     #if(batch_norm == TRUE){net = tf$layers$batch_normalization(net, training=is_training, name='batch_norm_1')}
-    #net = tf$layers$dropout(inputs=net, rate=dropout_rate, training=is_training, name='drop1')
+    net = tf$layers$dropout(inputs=net, rate=dropout_rate, training=is_training, name='drop1')
     net = tf$layers$dense(inputs=net,
                           units=256,
                           activation=tf$nn$relu,
@@ -320,7 +320,7 @@ decoder_large = function(inputs,
                           bias_initializer=tf$ones_initializer(),
                           name='fc2')
     #if(batch_norm == TRUE){net = tf$layers$batch_normalization(net, training=is_training, name='batch_norm_2')}
-    #net = tf$layers$dropout(inputs=net, rate=dropout_rate, training=is_training, name='drop2')
+    net = tf$layers$dropout(inputs=net, rate=dropout_rate, training=is_training, name='drop2')
     net = tf$layers$dense(inputs=net,
                           units=512,
                           activation=tf$nn$relu,
@@ -330,7 +330,7 @@ decoder_large = function(inputs,
                           bias_initializer=tf$ones_initializer(),
                           name='fc3')
     #if(batch_norm == TRUE){net = tf$layers$batch_normalization(net, training=is_training, name='batch_norm_3')}
-    #net = tf$layers$dropout(inputs=net, rate=dropout_rate, training=is_training, name='drop3')
+    net = tf$layers$dropout(inputs=net, rate=dropout_rate, training=is_training, name='drop3')
     proj = tf$layers$dense(inputs=net,
                            units=final_dim,
                            activation=NULL,

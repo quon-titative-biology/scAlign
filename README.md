@@ -5,9 +5,11 @@ A deep learning-based tool for alignment and integration of single cell genomic 
 
 [Unsupervised aligment and projection of HSCs](https://github.com/quon-titative-biology/examples/blob/master/scAlign_kowalcyzk_et_al/scAlign_kowalcyzk_et_al.md)
 
+[Multiway aligment using all pairs method](https://github.com/quon-titative-biology/examples/blob/master/scAlign_multiway_alignment/scAlign_multiway_pancreas.md)
+
 ## Updates
 
-#### (4/11/2019) Multi-dataset alignment added to github. Tutorial following shortly.
+#### (4/11/2019) Multi-dataset alignment added to github.
 
 #### (4/8/2019) Partial labels support.
 

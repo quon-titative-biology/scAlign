@@ -125,6 +125,7 @@ scAlignMulti = function(sce.object,
       ## Encoder architecture ##
       tensorflow::flag_string('encoder', options$architecture, 'Which network architecture from architectures.py to use.'),
       tensorflow::flag_integer('emb_size', options$num.dim, 'Size of the embeddings to learn.'),
+      tensorflow::flag_boolean('dropout', TRUE, 'To include batch_norm layers in model'),
       tensorflow::flag_boolean('batch_norm', TRUE, 'To include batch_norm layers in model'),
       tensorflow::flag_numeric('batch_norm_decay', 0.99, 'Batch norm decay factor (unused at the moment'),
       ## Decoder architecture ##

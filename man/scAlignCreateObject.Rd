@@ -4,17 +4,14 @@
 \alias{scAlignCreateObject}
 \title{Creates scAlign object}
 \usage{
-scAlignCreateObject(sce.objects, labels = list(), meta.data = NULL,
-  pca.reduce = FALSE, pcs.compute = 20, cca.reduce = FALSE,
-  ccs.compute = 15, data.use = "scale.data",
-  project.name = "scAlignProject")
+scAlignCreateObject(sce.objects, labels = list(), pca.reduce = FALSE,
+  pcs.compute = 20, cca.reduce = FALSE, ccs.compute = 15,
+  data.use = "scale.data", project.name = "scAlignProject")
 }
 \arguments{
 \item{sce.objects}{List of Seurat or Matrix objects; sample x feature.}
 
 \item{labels}{List of labels for each object.}
-
-\item{meta.data}{Additional meta.data to add.}
 
 \item{pca.reduce}{Initial step of dimensionality be performced by PCA.}
 

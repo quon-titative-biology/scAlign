@@ -57,6 +57,7 @@ encoderModel_train_encoder_multi = function(FLAGS, CV, config,
         input_size=data_shape,
         complexity=3,
         emb_size=FLAGS$emb_size,
+        dropout = FLAGS$dropout,
         batch_norm=FLAGS$batch_norm)
 
     ## Define test first, also acts as network initializer.

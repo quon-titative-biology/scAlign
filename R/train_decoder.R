@@ -38,6 +38,7 @@ decoderModel_train_decoder = function(FLAGS, config, mode,
         emb_size=FLAGS$emb_size,
         final_dim=as.integer(ncol(data_full)),
         complexity=FLAGS$complexity,
+        dropout=FLAGS$dropout,
         batch_norm=FLAGS$batch_norm)
 
     ## Define test first, also acts as network initializer.
@@ -78,7 +79,6 @@ decoderModel_train_decoder = function(FLAGS, config, mode,
 
   ## Training scope
   sess = NULL ## Appease R check
-  loss_tracker = c(); patience_count = 0; FLAGS$early_stopping = FALSE;
   with(tf$Session(graph=graph, config=config) %as% sess, {
       ## Set the logging level for tensorflow to only fatal issues
       tf$logging$set_verbosity(tf$logging$FATAL)
@@ -97,34 +97,15 @@ decoderModel_train_decoder = function(FLAGS, config, mode,
 
       ## Training!
       for(step in seq_len(as.integer(FLAGS$max_steps))){
-        if(patience_count >= 0){
-          res = sess$run(list(train_op, summary_op, loss_op), feed_dict=dict(decay_step = FLAGS$decay_step))
-        }else{
-          res = sess$run(list(train_op, summary_op, loss_op), feed_dict=dict(decay_step = 100))
-        }
+        
+        ## Training!
+        res = sess$run(list(train_op, summary_op, loss_op), feed_dict=dict(decay_step = FLAGS$decay_step))
 
+        ## Report loss
         if(((step %% 100) == 0) | (step == 1)){ print(paste0("Step: ", step, "    Loss: ", round(res[[3]], 4))) }
 
-        ## Record loss
-        loss_tracker[step] = as.numeric(res[[3]])
-        if(FLAGS$early_stopping == TRUE){
-          patience_count = .early_stop(loss_tracker, step, patience_count, early_stopping_active=floor(FLAGS$max_steps/10), min_delta=0.01)
-        }
-
-        ## Exceeded patience, now ready to stop. (Patience is == TRUE once patience_count >= 50, otherwise [0-49])
-        if(is.logical(patience_count)){
-          FLAGS$max_steps = step + 1000 ## 1000 more steps with fast learning_rate decay
-          FLAGS$early_stopping = FALSE
-          patience_count = -1
-          print("=========================================================")
-          print("================ EARLY STOPPING TRIGGERED ===============")
-          print("==FINALIZING OPTIMIZATION WITH FAST LEARNING RATE DECAY==")
-          print("=========================================================")
-          print(paste0("Step: ", step, "    Loss: ", round(res[[3]], 4)))
-        }
-
         ## Save
-        if(((step %% FLAGS$log_every_n_steps == 0) | (step == 1) | (step == FLAGS$max_steps)) & FLAGS$log.results == TRUE){
+        if(((step %% FLAGS$log_every_n_steps == 0) | (step == FLAGS$max_steps)) & FLAGS$log.results == TRUE){
           ## Save projections
           proj = decoderModel_calc_projection(sess, all_data_emb, data_full, test_proj, test_in, FLAGS)
           write.table(proj, file.path(paste0(FLAGS$logdir,'/', as.character(mode), '_decoder', '/projected_data_', as.character(step), '.csv')), sep=",", col.names=FALSE, row.names=FALSE)

@@ -128,7 +128,8 @@ scAlign = function(sce.object,
       ## Encoder architecture ##
       tensorflow::flag_string('encoder', options$architecture, 'Which network architecture from architectures.py to use.'),
       tensorflow::flag_integer('emb_size', options$num.dim, 'Size of the embeddings to learn.'),
-      tensorflow::flag_boolean('batch_norm', TRUE, 'To include batch_norm layers in model'),
+      tensorflow::flag_boolean('dropout', options$dropout.layer, 'To include dropout layers in model'),
+      tensorflow::flag_boolean('batch_norm', options$batch.norm.layer, 'To include batch_norm layers in model'),
       tensorflow::flag_numeric('batch_norm_decay', 0.99, 'Batch norm decay factor (unused at the moment'),
       ## Decoder architecture ##
       tensorflow::flag_string('decoder', options$architecture, 'Which network architecture from architectures.py to use for decoder network.'),
@@ -136,7 +137,7 @@ scAlign = function(sce.object,
       tensorflow::flag_integer('unsup_batch_size', options$batch.size, 'Number of unlabeled samples per batch.'),
       tensorflow::flag_numeric('learning_rate', options$learning.rate, 'Initial learning rate.'),
       tensorflow::flag_numeric('minimum_learning_rate', 1e-8, 'Lower bound for learning rate.'),
-      tensorflow::flag_numeric('decay_factor', 0.2, 'Learning rate decay factor.'),
+      tensorflow::flag_numeric('decay_factor', 0.33, 'Learning rate decay factor.'),
       tensorflow::flag_numeric('decay_steps', floor((3/5)*options$steps), 'Learning rate decay interval in steps.'),
       tensorflow::flag_integer('max_steps', options$steps, 'Number of training steps.'),
       tensorflow::flag_integer('max_steps_decoder', options$steps, 'Number of training steps.'),
@@ -163,6 +164,7 @@ scAlign = function(sce.object,
       tensorflow::flag_string('prob_comp', 'exp',  'How to compute p_ab, p_ba: non_exp (expless softmax), or softmax'),
       tensorflow::flag_string('self_sim', 'zero', 'To use self similarity in loss function, p_aba and T diagonal zero?'),
       tensorflow::flag_numeric('perplexity', options$perplexity, 'parameter used to control number of neighbors when computing T_ij'),
+      tensorflow::flag_numeric('betas', options$betas, 'parameter used to specify fixed bandwidth for guassian kernel'),
       tensorflow::flag_string('tsne_metric', 'euclidean', 'The metric to use when calculating distance between instances in a feature array.'),
       tensorflow::flag_string('tsne_method', 'exact', 'exact or approximately compute p_ij'),
       tensorflow::flag_string('tsne_init', 'random', 'If int, random_state is the seed used by the random number generator'),
@@ -215,8 +217,9 @@ scAlign = function(sce.object,
                                              object1.name, object2.name,
                                              object1, as.integer(colData(sce.object)[,"scAlign.labels"][object1.name == colData(sce.object)[,"group.by"]]),
                                              object2, as.integer(colData(sce.object)[,"scAlign.labels"][object2.name == colData(sce.object)[,"group.by"]]))
-        reducedDim(sce.object, paste0("ALIGNED-", data.use)) = aligned[[1]]
-        metadata(sce.object)[[paste0("LOSS-", data.use)]] = aligned[[2]]
+        print("============== Alignment Complete ==============")
+        reducedDim(sce.object, paste0("ALIGNED-", data.use)) = as.matrix(aligned[[1]])
+        metadata(sce.object)$LOSS = aligned[[2]]
       }
     }, error=function(e){
       print("Error during alignment, returning scAlign class.")
@@ -251,15 +254,13 @@ scAlign = function(sce.object,
         ## Train models
         print(paste0("============== Step 2/3: ", object1.name ," decoder training ==============="))
         projected = decoderModel_train_decoder(FLAGS, config, object1.name,
-                                                       object1,
-                                                       data_embed_source, emb_dataset)
+                                                       object1, data_embed_source, emb_dataset)
 
         reducedDim(sce.object, paste0(object2.name, "2", object1.name)) = projected
 
         print(paste0("============== Step 3/3: ", object2.name ," decoder training ==============="))
         projected = decoderModel_train_decoder(FLAGS, config, object2.name,
-                                                       object2,
-                                                       data_embed_target, emb_dataset)
+                                                       object2, data_embed_target, emb_dataset)
 
         reducedDim(sce.object, paste0(object1.name, "2", object2.name)) = projected
       }

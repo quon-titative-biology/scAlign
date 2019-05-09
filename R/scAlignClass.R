@@ -9,7 +9,6 @@
 #' @param pcs.compute Number of PCs to retrain for alignment.
 #' @param cca.reduce Initial step of dimensionality be performced by CCA.
 #' @param ccs.compute Number of CCs to retrain for alignment.
-#' @param meta.data Additional meta.data to add.
 #' @param project.name Name for current scAlign project.
 #'
 #' @import SingleCellExperiment
@@ -54,7 +53,6 @@
 #' @export
 scAlignCreateObject = function(sce.objects,
                                labels = list(),
-                               meta.data = NULL,
                                pca.reduce = FALSE,
                                pcs.compute = 20,
                                cca.reduce = FALSE,
@@ -87,14 +85,18 @@ scAlignCreateObject = function(sce.objects,
     group.by = c(group.by, rep(name, ncol(sce.objects[[name]])))
   }
   colData(combined.sce)[,"group.by"] = group.by
-  ## Set cell labels
-  tryCatch({
-    ## Set labels to be used in supervised training or defaults
-    colData(combined.sce)$scAlign.labels.orig = unlist(labels)
-    colData(combined.sce)[,"scAlign.labels"] = if(length(unlist(labels)) == 0) rep("NA", nrow(colData(combined.sce))) else (as.integer(factor(unlist(labels)))-1)
-    colData(combined.sce)[,"scAlign.labels"][is.na(colData(combined.sce)[,"scAlign.labels"])] = -1
-  }, error=function(e){print("Error converting labels to factors."); stop(e);})
-  if(length(colData(combined.sce)[,"scAlign.labels"]) < nrow(colData(combined.sce))) { stop("Not enough labels for all cells.") }
+  if(length(labels) == length(sce.objects)){
+    ## Set cell labels
+    tryCatch({
+      ## Set labels to be used in supervised training or defaults
+      colData(combined.sce)[,"scAlign.labels.orig"] = unlist(labels)
+      colData(combined.sce)[,"scAlign.labels"] = if(length(unlist(labels)) == 0) rep("NA", nrow(colData(combined.sce))) else (as.integer(factor(unlist(labels)))-1)
+      colData(combined.sce)[,"scAlign.labels"][is.na(colData(combined.sce)[,"scAlign.labels"])] = -1
+    }, error=function(e){print("Error converting labels to factors."); stop(e);})
+  }else{
+      colData(combined.sce)[,"scAlign.labels"] = rep(0, ncol(combined.sce))
+      print("Ignoring labels list which is either empty or less than the number of sce objects")
+  }
   metadata(combined.sce)[["arguments"]] = data.frame(encoder.data=character(),
                                            decoder.data=character(),
                                            supervised=character(),
@@ -160,6 +162,14 @@ scAlignCreateObject = function(sce.objects,
   }else if(cca.reduce == TRUE & length(sce.objects) > 2){
     print("Please run multi-dataset CCA manually, CCA was not computed.")
   }
+
+  # if(normalize == TRUE){
+  #   ## Run Seurat normalization
+  #   normalize.data = CreateSeuratObject(counts(combined.sce), project = name)
+  #   normalize.data = NormalizeData(normalize.data)
+  #   normalize.data = ScaleData(normalize.data, do.center=TRUE, do.scale=TRUE)
+  # }
+
   return(combined.sce)
 }
 
@@ -174,8 +184,11 @@ scAlignCreateObject = function(sce.objects,
 #' @param learning.rate (default: 1e-4) Initial learning rate for ADAM.
 #' @param log.every (default: 5000) Number of steps before saving results.
 #' @param architecture (default: "small") Network function name for scAlign.
+#' @param batch.norm.layer (default: FALSE) Include batch normalization in the network structure.
+#' @param dropout.layer (default: TRUE) Include dropout in the network.
 #' @param num.dim (default: 32) Number of dimensions for joint embedding space.
 #' @param perplexity (default: 30) Determines the neighborhood size for each sample.
+#' @param betas (default: 0) Sets the bandwidth of the gaussians to be the same if > 0. Otherwise per cell beta is computed.
 #' @param norm (default: TRUE) Normalize the data mini batches while training scAlign (repeated).
 #' @param full.norm (default: FALSE) Normalize the data matrix prior to scAlign (done once).
 #' @param early.stop (default: TRUE) Early stopping during network training.
@@ -195,10 +208,10 @@ scAlignCreateObject = function(sce.objects,
 #'                        architecture="large")
 #'
 #' @export
-scAlignOptions = function(steps = 15000, batch.size = 300,
+scAlignOptions = function(steps = 15000, batch.size = 150,
                           learning.rate = 1e-4, log.every = 5000,
-                          architecture="large",
-                          num.dim = 32, perplexity = 30,
+                          architecture="large", batch.norm.layer = TRUE, dropout.layer = TRUE,
+                          num.dim = 32, perplexity = 30, betas=0,
                           norm = TRUE, full.norm = FALSE,
                           early.stop = FALSE,
                           walker.loss = TRUE, reconc.loss = FALSE,
@@ -206,16 +219,19 @@ scAlignOptions = function(steps = 15000, batch.size = 300,
                           classifier.delay=NA, gpu.device = '0',
                           seed = 1234){
 
-     valid_opts = c("steps", "batch.size", "learning.rate", "log.every", "architecture",
-                   "num.dim", "perplexity", "norm", "full.norm", "early.stop", "walker.loss",
+     valid_opts = c("steps", "batch.size", "learning.rate", "log.every", "architecture", "batch.norm.layer", "dropout.layer",
+                   "num.dim", "perplexity", "betas", "norm", "full.norm", "early.stop", "walker.loss",
                    "reconc.loss", "walker.weight", "classifier.weight", "classifier.delay", "gpu.device", "seed")
      opts = data.frame(steps = steps,
                        batch.size = batch.size,
                        learning.rate = learning.rate,
                        log.every = log.every,
                        architecture = architecture,
+                       batch.norm.layer = batch.norm.layer,
+                       dropout.layer = dropout.layer,
                        num.dim = num.dim,
                        perplexity = perplexity,
+                       betas = betas,
                        norm = norm,
                        full.norm = full.norm,
                        early.stop = early.stop,

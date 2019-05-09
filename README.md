@@ -3,9 +3,11 @@ A deep learning-based tool for alignment and integration of single cell genomic 
 
 ## Tutorials
 
-[Unsupervised aligment and projection of HSCs](https://github.com/quon-titative-biology/examples/blob/master/scAlign_kowalcyzk_et_al/scAlign_kowalcyzk_et_al.md)
+[Unsupervised alignment and projection of HSCs](https://github.com/quon-titative-biology/examples/blob/master/scAlign_kowalcyzk_et_al/scAlign_kowalcyzk_et_al.md)
 
-[Multiway aligment using all pairs method](https://github.com/quon-titative-biology/examples/blob/master/scAlign_multiway_alignment/scAlign_multiway_pancreas.md)
+[Multiway alignment using all pairs method](https://github.com/quon-titative-biology/examples/blob/master/scAlign_multiway_alignment/scAlign_multiway_pancreas.md)
+
+[Supervised/Semi-supervised alignment](https://github.com/quon-titative-biology/examples/blob/master/scAlign_supervised_alignment/scAlign_supervised_alignment.md)
 
 ## Updates
 

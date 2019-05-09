@@ -11,6 +11,8 @@ A deep learning-based tool for alignment and integration of single cell genomic 
 
 ## Updates
 
+#### (5/9/2019) Updated to version 1.0! Tutorials for multiple modes of operation now available. 
+
 #### (4/11/2019) Multi-dataset alignment added to github.
 
 #### (4/8/2019) Partial labels support.

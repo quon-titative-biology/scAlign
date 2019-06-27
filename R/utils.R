@@ -335,8 +335,7 @@ alignment_score <- function(data, source_labels, target_labels, nn=0){
                FLAGS$learning_rate,
                step,
                decay_step,
-               FLAGS$decay_factor,
-               staircase=TRUE),
+               FLAGS$decay_factor),
            FLAGS$minimum_learning_rate))
 }
 

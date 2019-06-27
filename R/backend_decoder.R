@@ -58,10 +58,7 @@ decoderModel_add_mse_loss = function(proj, data, mode, debug=TRUE){
   ## Define decoder reconstruction loss
   loss_decoder = tf$losses$mean_squared_error(data,
                                               proj,
-                                              weights=1.0,
-                                              scope=NULL,
-                                              loss_collection=tf$GraphKeys$LOSSES,
-                                              reduction=tf$losses$Reduction$SUM_BY_NONZERO_WEIGHTS)
+                                              weights=1.0)
 
   ## Record loss
   tf$summary$scalar(paste0('Loss_decoder_', mode), loss_decoder)

@@ -13,15 +13,6 @@ A deep learning-based tool for alignment and integration of single cell genomic 
 
 #### (5/9/2019) Updated to version 1.0! Tutorials for multiple modes of operation now available. 
 
-#### (4/11/2019) Multi-dataset alignment added to github.
-
-#### (4/8/2019) Partial labels support.
-
--- To use partial labels: set unlabeled cells to be NA in the label vector passed to `scAlignCreateObject`.
-
-#### TODO: Supervised and partially supervised tutorial.
-#### TODO: Pancreas islet multi-dataset alignment.
-
 ## R Package and Bioconductor
 
 Bioconductor for now will only support the Linux version of scAlign. For Windows and Mac please download/install the package directly from [github](https://github.com/quon-titative-biology/). 

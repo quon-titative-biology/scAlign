@@ -125,6 +125,7 @@ scAlignMulti = function(sce.object,
       ## Encoder architecture ##
       tensorflow::flag_string('encoder', options$architecture, 'Which network architecture from architectures.py to use.'),
       tensorflow::flag_integer('emb_size', options$num.dim, 'Size of the embeddings to learn.'),
+      tensorflow::flag_boolean('dropout', TRUE, 'To include batch_norm layers in model'),
       tensorflow::flag_boolean('batch_norm', TRUE, 'To include batch_norm layers in model'),
       tensorflow::flag_numeric('batch_norm_decay', 0.99, 'Batch norm decay factor (unused at the moment'),
       ## Decoder architecture ##
@@ -137,7 +138,7 @@ scAlignMulti = function(sce.object,
       tensorflow::flag_numeric('decay_factor', 0.33, 'Learning rate decay factor.'),
       tensorflow::flag_numeric('decay_steps', floor((3/5)*options$steps), 'Learning rate decay interval in steps.'),
       tensorflow::flag_integer('max_steps', options$steps, 'Number of training steps.'),
-      tensorflow::flag_integer('max_steps_decoder', options$steps, 'Number of training steps.'),
+      tensorflow::flag_integer('max_steps_decoder', max(options$steps, 10000), 'Number of training steps.'),
       tensorflow::flag_integer('random_seed', options$seed, 'Integer random seed used for labeled set selection.'),
       ## Loss function: walker loss for object1 ##
       tensorflow::flag_numeric('walker_weight', 1.0, 'Weight for walker loss.'),

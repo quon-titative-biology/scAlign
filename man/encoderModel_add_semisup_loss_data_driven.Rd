@@ -25,7 +25,7 @@ encoderModel_add_semisup_loss_data_driven(p_target, a, b, data_shape,
 
 \item{comp}{How to compute round trip probabilities}
 
-\item{betas}{Value for fixed beta gaussian kernel (unused)}
+\item{betas}{Value for fixed beta gaussian kernel}
 
 \item{diag}{Whether to include self similarity}
 

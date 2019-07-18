@@ -240,7 +240,7 @@ alignment_score <- function(data, source_labels, target_labels, nn=0){
   }
 
   ## Parameter check
-  if (!is.character(arguments[,"supervised"]) || !is.element(arguments[,"supervised"], c("none", names(assays(sce.object)), "both"))) { stop("supervised should be \"none\", \"[object.name(s)]\" or \"both\".") }
+  if (!is.character(arguments[,"supervised"]) || !is.element(arguments[,"supervised"], c("none", unique(sce.object$group.by), "both"))) { stop("supervised should be \"none\", \"[object.name(s)]\" or \"both\".") }
   if (!is.character(arguments[,"device"])) { stop("device should be a string.") }
   if (!.is.wholenumber(options[,"batch.size"])) { stop("batch.size should be an integer.") }
   if (!.is.wholenumber(options[,"perplexity"])) { stop("perplexity should be an integer.") }
@@ -335,8 +335,7 @@ alignment_score <- function(data, source_labels, target_labels, nn=0){
                FLAGS$learning_rate,
                step,
                decay_step,
-               FLAGS$decay_factor,
-               staircase=TRUE),
+               FLAGS$decay_factor),
            FLAGS$minimum_learning_rate))
 }
 

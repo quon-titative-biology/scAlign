@@ -13,7 +13,7 @@
 #' @param visit_weight Visit loss component weight (unused)
 #' @param mode Specifies which walker loss is being computed
 #' @param comp How to compute round trip probabilities
-#' @param betas Value for fixed beta gaussian kernel (unused)
+#' @param betas Value for fixed beta gaussian kernel
 #' @param diag Whether to include self similarity
 #' @param debug Sets the verbosity level
 #'
@@ -108,7 +108,7 @@ encoderModel_add_logit_loss = function(logits, labels, weight=1.0){
 #' @import tensorflow
 #'
 #' @keywords internal
-encoderModel_gaussian_kernel = function(data, data_b=NULL, dim, perplexity=30, method="euclidean", diag="zero"){
+encoderModel_gaussian_kernel = function(data, data_b=NULL, dim, perplexity=30, method="euclidean", betas.fixed=0, diag="zero"){
   with(tf$name_scope("gaussian_kernel"), {
     if(is.null(data_b)){data_b = data}
 
@@ -132,68 +132,87 @@ encoderModel_gaussian_kernel = function(data, data_b=NULL, dim, perplexity=30, m
       affinities = norm_a - tf$constant(2, dtype=tf$float64)*tf$matmul(data, data_b, transpose_b=TRUE) + norm_b
     }
 
-    ## While loop conditional
-    cond = function(step, affinities, perplexity, betas, beta_min, beta_max, p_ij, p_ij_unnorm){
-      return(tf$less_equal(step, tf$constant(100)))
-    }
+    # if(betas.fixed!=0){
+    #   betas = tf$fill(dims=shape(dim), value=tf$cast(betas.fixed, tf$float64))
+    #   p_ij = tf$exp(tf$multiply(tf$negative(affinities), tf$reshape(betas, shape(-1,1))))
+    #   p_ij = tf$reshape(p_ij, shape(dim, dim)) ## tensorflow R requires this?
+    #   ## Reset exp(0)'s to 0
+    #   if(diag == "zero"){
+    #     p_ij = tf$matrix_set_diag(p_ij, tf$cast(tf$zeros(shape(dim)), tf$float64))
+    #   }
+    #
+    #   sum_pij = tf$reduce_sum(p_ij, axis=as.integer(-1))
+    #   sum_pij = tf$where(tf$equal(sum_pij, tf$constant(0, dtype=tf$float64)), tf$fill(dims=shape(dim), value=EPSILON_DBL), sum_pij)
+    #
+    #   p_ij_unnorm = p_ij
+    #   ## Normalize
+    #   p_ij = tf$divide(p_ij, tf$reshape(sum_pij, shape(-1,1)))
+    #   return(p_ij)
+    # }else{
 
-    ## While loop body
-    body = function(step, affinities, perplexity, betas, beta_min, beta_max, p_ij, p_ij_unnorm){
-      step = tf$add(step, tf$constant(1))
-      ## Compute probabilities
-      p_ij = tf$exp(tf$multiply(tf$negative(affinities), tf$reshape(betas, shape(-1,1))))
-      p_ij = tf$reshape(p_ij, shape(dim, dim)) ## tensorflow R requires this?
-      ## Reset exp(0)'s to 0
-      if(diag == "zero"){
-        p_ij = tf$matrix_set_diag(p_ij, tf$cast(tf$zeros(shape(dim)), tf$float64))
+      ## While loop conditional
+      cond = function(step, affinities, perplexity, betas, beta_min, beta_max, p_ij, p_ij_unnorm){
+        return(tf$less_equal(step, tf$constant(100)))
       }
 
-      sum_pij = tf$reduce_sum(p_ij, axis=as.integer(-1))
-      sum_pij = tf$where(tf$equal(sum_pij, tf$constant(0, dtype=tf$float64)), tf$fill(dims=shape(dim), value=EPSILON_DBL), sum_pij)
+      ## While loop body
+      body = function(step, affinities, perplexity, betas, beta_min, beta_max, p_ij, p_ij_unnorm){
+        step = tf$add(step, tf$constant(1))
+        ## Compute probabilities
+        p_ij = tf$exp(tf$multiply(tf$negative(affinities), tf$reshape(betas, shape(-1,1))))
+        p_ij = tf$reshape(p_ij, shape(dim, dim)) ## tensorflow R requires this?
+        ## Reset exp(0)'s to 0
+        if(diag == "zero"){
+          p_ij = tf$matrix_set_diag(p_ij, tf$cast(tf$zeros(shape(dim)), tf$float64))
+        }
 
-      p_ij_unnorm = p_ij
-      ## Normalize
-      p_ij = tf$divide(p_ij, tf$reshape(sum_pij, shape(-1,1)))
+        sum_pij = tf$reduce_sum(p_ij, axis=as.integer(-1))
+        sum_pij = tf$where(tf$equal(sum_pij, tf$constant(0, dtype=tf$float64)), tf$fill(dims=shape(dim), value=EPSILON_DBL), sum_pij)
 
-      ## Precision based method
-      sum_disti_pij = tf$reduce_sum(tf$multiply(affinities, p_ij), axis=as.integer(-1))
+        p_ij_unnorm = p_ij
+        ## Normalize
+        p_ij = tf$divide(p_ij, tf$reshape(sum_pij, shape(-1,1)))
 
-      ## Compute entropy
-      entropy = tf$add(tf$log(sum_pij), tf$multiply(betas, sum_disti_pij))
-      entropy_diff = tf$subtract(entropy, perplexity)
+        ## Precision based method
+        sum_disti_pij = tf$reduce_sum(tf$multiply(affinities, p_ij), axis=as.integer(-1))
 
-      ## Logic for binary search: Lines 98-109 in tsne_util.pyx.
-      ## Set beta_min
-      beta_min = tf$where(tf$logical_and(tf$greater(entropy_diff, tf$constant(0.0, dtype=tf$float64)),
-                                         tf$greater(tf$abs(entropy_diff), PERPLEXITY_TOLERANCE)),
-                                         betas, beta_min)
+        ## Compute entropy
+        entropy = tf$add(tf$log(sum_pij), tf$multiply(betas, sum_disti_pij))
+        entropy_diff = tf$subtract(entropy, perplexity)
 
-      ## Set betas for which entropy_diff > 0.0
-      ## Where = (cond, x, y): returns elements of x for which cond is true and y elements for which cond is False.
-      betas = tf$where(tf$logical_and(tf$greater(entropy_diff, tf$constant(0.0, dtype=tf$float64)),
-                                      tf$greater(tf$abs(entropy_diff), PERPLEXITY_TOLERANCE)),
-                                      tf$where(tf$equal(beta_max, INFINITY), tf$multiply(betas,2.0), tf$divide(tf$add(betas, beta_max), 2.0)), betas)
+        ## Logic for binary search: Lines 98-109 in tsne_util.pyx.
+        ## Set beta_min
+        beta_min = tf$where(tf$logical_and(tf$greater(entropy_diff, tf$constant(0.0, dtype=tf$float64)),
+                                           tf$greater(tf$abs(entropy_diff), PERPLEXITY_TOLERANCE)),
+                                           betas, beta_min)
 
-      ## Set beta_max
-      beta_max = tf$where(tf$logical_and(tf$less_equal(entropy_diff, tf$constant(0.0, dtype=tf$float64)),
-                                         tf$greater(tf$abs(entropy_diff), PERPLEXITY_TOLERANCE)),
-                                         betas, beta_max)
+        ## Set betas for which entropy_diff > 0.0
+        ## Where = (cond, x, y): returns elements of x for which cond is true and y elements for which cond is False.
+        betas = tf$where(tf$logical_and(tf$greater(entropy_diff, tf$constant(0.0, dtype=tf$float64)),
+                                        tf$greater(tf$abs(entropy_diff), PERPLEXITY_TOLERANCE)),
+                                        tf$where(tf$equal(beta_max, INFINITY), tf$multiply(betas,2.0), tf$divide(tf$add(betas, beta_max), 2.0)), betas)
 
-      ##Set betas for which entropy_diff <= 0.0
-      betas = tf$where(tf$logical_and(tf$less_equal(entropy_diff, tf$constant(0.0, dtype=tf$float64)),
-                                      tf$greater(tf$abs(entropy_diff), PERPLEXITY_TOLERANCE)),
-                                      tf$where(tf$equal(beta_min, tf$negative(INFINITY)), tf$divide(betas,2.0), tf$divide(tf$add(betas, beta_min), 2.0)), betas)
+        ## Set beta_max
+        beta_max = tf$where(tf$logical_and(tf$less_equal(entropy_diff, tf$constant(0.0, dtype=tf$float64)),
+                                           tf$greater(tf$abs(entropy_diff), PERPLEXITY_TOLERANCE)),
+                                           betas, beta_max)
 
-      ## Control dependencies before looping can continue
-      with(tf$control_dependencies(list(step, affinities, perplexity, betas, beta_min)), {
-        return(list(step, affinities, perplexity, betas, beta_min, beta_max, p_ij, p_ij_unnorm))
-      })
-    }
+        ##Set betas for which entropy_diff <= 0.0
+        betas = tf$where(tf$logical_and(tf$less_equal(entropy_diff, tf$constant(0.0, dtype=tf$float64)),
+                                        tf$greater(tf$abs(entropy_diff), PERPLEXITY_TOLERANCE)),
+                                        tf$where(tf$equal(beta_min, tf$negative(INFINITY)), tf$divide(betas,2.0), tf$divide(tf$add(betas, beta_min), 2.0)), betas)
 
-    ## Run binary search for bandwidth (precision)
-    step = tf$constant(0)
-    loop = tf$while_loop(cond, body, list(step, affinities, perplexity, betas, beta_min, beta_max, p_ij, p_ij_unnorm), back_prop=FALSE)
-    return(loop[[7]])
+        ## Control dependencies before looping can continue
+        with(tf$control_dependencies(list(step, affinities, perplexity, betas, beta_min)), {
+          return(list(step, affinities, perplexity, betas, beta_min, beta_max, p_ij, p_ij_unnorm))
+        })
+      }
+
+      ## Run binary search for bandwidth (precision)
+      step = tf$constant(0)
+      loop = tf$while_loop(cond, body, list(step, affinities, perplexity, betas, beta_min, beta_max, p_ij, p_ij_unnorm), back_prop=FALSE)
+      return(loop[[7]])
+    # }
   })
 }
 
@@ -264,7 +283,7 @@ encoderModel_calc_embedding = function(sess, data, endpoint, test_in, FLAGS, bat
   emb = matrix(nrow=nrow(data), ncol=FLAGS$emb_size, 0)
   for(i in seq(1,nrow(data),batch_size)){
     ix_end = min((i+(batch_size-1)), nrow(data))
-    emb[i:ix_end,] = sess$run(endpoint, dict(test_in=data[i:ix_end,]))
+    emb[i:ix_end,] = sess$run(endpoint, dict(test_in=data[i:ix_end,,drop=FALSE]))
   }
   return(emb)
 }

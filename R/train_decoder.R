@@ -19,53 +19,71 @@ decoderModel_train_decoder = function(FLAGS, config, mode,
                                       data_full, data_emb, all_data_emb){
 
   ## Define network structure
+  tf$reset_default_graph()
   graph = tf$Graph()
   with(graph$as_default(), {
     print("Graph construction")
-    with(tf$name_scope("decoder_data"), {
-      data_emb_ph  = tf$placeholder(tf$float32, shape(NULL,as.integer(ncol(data_emb))))
-      data_full_ph = tf$placeholder(tf$float32, shape(NULL,as.integer(ncol(data_full))))
-      dataset      = tf$data$Dataset$from_tensor_slices(tuple(data_emb_ph, data_full_ph))
-      dataset      = dataset$shuffle(dim(data_emb)[1])
-      dataset      = dataset$`repeat`()
-      dataset      = dataset$batch(FLAGS$unsup_batch_size)
-      dataset_iter = dataset$make_initializable_iterator()
-      mini_batch   = dataset_iter$get_next()
-    })
+    with(tf$variable_scope("decoder", reuse=tf$AUTO_REUSE), {
+      with(tf$name_scope("decoder_data"), {
+        data_emb_ph  = tf$placeholder(tf$float32, shape(NULL,as.integer(ncol(data_emb))))
+        data_full_ph = tf$placeholder(tf$float32, shape(NULL,as.integer(ncol(data_full))))
+        dataset      = tf$data$Dataset$from_tensor_slices(tuple(data_emb_ph, data_full_ph))
+        dataset      = dataset$shuffle(dim(data_emb)[1])
+        dataset      = dataset$`repeat`()
+        dataset      = dataset$batch(FLAGS$unsup_batch_size)
+        dataset_iter = dataset$make_initializable_iterator()
+        mini_batch   = dataset_iter$get_next()
+      })
 
-    model_function_decoder = partial(
-        match.fun(paste0("decoder_", FLAGS$decoder)),
-        emb_size=FLAGS$emb_size,
-        final_dim=as.integer(ncol(data_full)),
-        complexity=FLAGS$complexity,
-        batch_norm=FLAGS$batch_norm)
+      # model_function_decoder = partial(
+      #     match.fun(paste0("decoder_", FLAGS$decoder)),
+      #     emb_size=FLAGS$emb_size,
+      #     final_dim=as.integer(ncol(data_full)),
+      #     complexity=FLAGS$complexity,
+      #     dropout=FLAGS$dropout,
+      #     batch_norm=FALSE)
 
-    ## Define test first, also acts as network initializer.
-    ## tf.get_variable() is only called when reuse=FALSE for named/var scopes...
-    test_in = tf$placeholder(tf$float32, shape(NULL, as.integer(ncol(data_emb))), 'test_in')
-    test_proj = decoderModel_emb_to_proj(model_function_decoder, test_in, is_training=FALSE)
+      ## Architectures (parameterizing dists)
+      decoder_func = tf$make_template('decoder',
+                                      match.fun(paste0("decoder_", FLAGS$decoder)),
+                                      emb_size=FLAGS$emb_size,
+                                      final_dim=as.integer(ncol(data_full)),
+                                      dropout=FLAGS$dropout,
+                                      l2_weight=1e-4,
+                                      batch_norm=FALSE)
 
-    ## Global training step
-    step = tf$train$get_or_create_global_step()
+      ## Global training step
+      global_step = tf$train$get_or_create_global_step()
 
-    ## Define decoder op for training
-    proj = decoderModel_emb_to_proj(model_function_decoder, mini_batch[[1]], is_training=TRUE)
+      ## Define decoder op for training
+      proj = decoder_func(inputs=mini_batch[[1]], is_training=TRUE)
 
-    ## Loss
-    decoderModel_add_mse_loss(proj, mini_batch[[2]], mode)
+      ## Define decoder reconstruction loss
+      loss_decoder = tf$losses$mean_squared_error(mini_batch[[2]],
+                                                  proj)
 
-    ## Use a placeholder in the graph for user-defined learning rate
-    decay_step = tf$placeholder(tf$float32)
+      # ## Set up learning rate
+      learning_rate = tf$maximum(
+                        tf$train$exponential_decay(
+                           FLAGS$learning_rate,
+                           global_step,
+                           5000,
+                           FLAGS$decay_factor),
+                       FLAGS$minimum_learning_rate)
 
-    ## Set up learning rate
-    t_learning_rate = .learning_rate(step, decay_step, FLAGS)
+      ## Create training operation
+      train_loss = loss_decoder
+      ## Minimize loss function
+      with(tf$name_scope("Adam"), {
+        optimizer = tf$train$AdamOptimizer(learning_rate)
+        train_op = optimizer$minimize(train_loss, global_step=global_step)
+      })
 
-    ## Create training operation
-    train_op = decoderModel_create_train_op(t_learning_rate, step)
-    loss_op = tf$losses$get_total_loss()
-    summary_op = tf$summary$merge_all()
+      ## Monitor
+      tf$summary$scalar('Learning_Rate', learning_rate)
+      tf$summary$scalar('Loss_Total', loss_decoder)
 
-    if(FLAGS$log.results == TRUE){
+      summary_op = tf$summary$merge_all()
 
       ## Write summaries
       summary_writer = tf$summary$FileWriter(file.path(paste0(FLAGS$logdir, '/', as.character(mode), "_decoder/")), graph)
@@ -73,12 +91,16 @@ decoderModel_train_decoder = function(FLAGS, config, mode,
       ## Save model
       saver <- tf$train$Saver(max_to_keep=FLAGS$max_checkpoints,
                               keep_checkpoint_every_n_hours=FLAGS$keep_checkpoint_every_n_hours)
-    }
+
+      ## Define decoder op for training
+      test_in = tf$placeholder(tf$float32, shape(NULL, as.integer(ncol(data_emb))), 'test_in')
+      test_proj = decoder_func(inputs=test_in, is_training=FALSE)
+    })
   }) ## End graphdef
+
 
   ## Training scope
   sess = NULL ## Appease R check
-  loss_tracker = c(); patience_count = 0; FLAGS$early_stopping = FALSE;
   with(tf$Session(graph=graph, config=config) %as% sess, {
       ## Set the logging level for tensorflow to only fatal issues
       tf$logging$set_verbosity(tf$logging$FATAL)
@@ -96,47 +118,29 @@ decoderModel_train_decoder = function(FLAGS, config, mode,
       sess$run(dataset_iter$initializer, feed_dict=dict(data_emb_ph = data_emb, data_full_ph = data_full))
 
       ## Training!
-      for(step in seq_len(as.integer(FLAGS$max_steps))){
-        if(patience_count >= 0){
-          res = sess$run(list(train_op, summary_op, loss_op), feed_dict=dict(decay_step = FLAGS$decay_step))
-        }else{
-          res = sess$run(list(train_op, summary_op, loss_op), feed_dict=dict(decay_step = 100))
-        }
+      for(step in seq_len(FLAGS$max_steps_decoder)){
 
-        if(((step %% 100) == 0) | (step == 1)){ print(paste0("Step: ", step, "    Loss: ", round(res[[3]], 4))) }
+        ## Training!
+        res = sess$run(list(train_op, summary_op, loss_decoder, proj, learning_rate, global_step))
 
-        ## Record loss
-        loss_tracker[step] = as.numeric(res[[3]])
-        if(FLAGS$early_stopping == TRUE){
-          patience_count = .early_stop(loss_tracker, step, patience_count, early_stopping_active=floor(FLAGS$max_steps/10), min_delta=0.01)
-        }
-
-        ## Exceeded patience, now ready to stop. (Patience is == TRUE once patience_count >= 50, otherwise [0-49])
-        if(is.logical(patience_count)){
-          FLAGS$max_steps = step + 1000 ## 1000 more steps with fast learning_rate decay
-          FLAGS$early_stopping = FALSE
-          patience_count = -1
-          print("=========================================================")
-          print("================ EARLY STOPPING TRIGGERED ===============")
-          print("==FINALIZING OPTIMIZATION WITH FAST LEARNING RATE DECAY==")
-          print("=========================================================")
-          print(paste0("Step: ", step, "    Loss: ", round(res[[3]], 4)))
-        }
+        ## Report loss
+        if(((step %% 100) == 0) | (step == 1)){ print(paste0("Step: ", step, "    Loss: ", round(res[[3]], 4))); summary_writer$add_summary(res[[2]], (step)); }
 
         ## Save
-        if(((step %% FLAGS$log_every_n_steps == 0) | (step == 1) | (step == FLAGS$max_steps)) & FLAGS$log.results == TRUE){
+        if(((step %% FLAGS$log_every_n_steps == 0) | (step == FLAGS$max_steps_decoder)) & FLAGS$log.results == TRUE){
           ## Save projections
-          proj = decoderModel_calc_projection(sess, all_data_emb, data_full, test_proj, test_in, FLAGS)
-          write.table(proj, file.path(paste0(FLAGS$logdir,'/', as.character(mode), '_decoder', '/projected_data_', as.character(step), '.csv')), sep=",", col.names=FALSE, row.names=FALSE)
+          # proj_res = sess$run(test_proj, feed_dict=dict(test_in = data_emb))
+          # write.table(proj_res, file.path(paste0(FLAGS$logdir,'/', as.character(mode), '_decoder', '/projected_data_', as.character(step), '.csv')), sep=",", col.names=FALSE, row.names=FALSE)
           ## Summary reports (Tensorboard)
           summary_writer$add_summary(res[[2]], (step))
           ## Write out graph
           saver$save(sess, file.path(paste0(FLAGS$logdir,'/', as.character(mode), '_decoder', '/model.ckpt')), as.integer(step))
         }
         ## Complete training
-        if(step == FLAGS$max_steps){
-          if(FLAGS$log.results == FALSE){ proj = decoderModel_calc_projection(sess, all_data_emb, data_full, test_proj, test_in, FLAGS) }
-          return(proj)
+        if(step == FLAGS$max_steps_decoder){
+          # if(FLAGS$log.results == FALSE){ proj = decoderModel_calc_projection(sess, all_data_emb, data_full, test_proj, test_in, FLAGS) }
+          proj_res = sess$run(test_proj, feed_dict=dict(test_in = all_data_emb))
+          return(proj_res)
         }
       }
   })

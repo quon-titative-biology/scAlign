@@ -4,9 +4,10 @@
 \alias{scAlignOptions}
 \title{Set training options}
 \usage{
-scAlignOptions(steps = 15000, batch.size = 300,
+scAlignOptions(steps = 15000, batch.size = 150,
   learning.rate = 1e-04, log.every = 5000, architecture = "large",
-  num.dim = 32, perplexity = 30, norm = TRUE, full.norm = FALSE,
+  batch.norm.layer = TRUE, dropout.layer = TRUE, num.dim = 32,
+  perplexity = 30, betas = 0, norm = TRUE, full.norm = FALSE,
   early.stop = FALSE, walker.loss = TRUE, reconc.loss = FALSE,
   walker.weight = 1, classifier.weight = 1, classifier.delay = NA,
   gpu.device = "0", seed = 1234)
@@ -22,9 +23,15 @@ scAlignOptions(steps = 15000, batch.size = 300,
 
 \item{architecture}{(default: "small") Network function name for scAlign.}
 
+\item{batch.norm.layer}{(default: FALSE) Include batch normalization in the network structure.}
+
+\item{dropout.layer}{(default: TRUE) Include dropout in the network.}
+
 \item{num.dim}{(default: 32) Number of dimensions for joint embedding space.}
 
 \item{perplexity}{(default: 30) Determines the neighborhood size for each sample.}
+
+\item{betas}{(default: 0) Sets the bandwidth of the gaussians to be the same if > 0. Otherwise per cell beta is computed.}
 
 \item{norm}{(default: TRUE) Normalize the data mini batches while training scAlign (repeated).}
 

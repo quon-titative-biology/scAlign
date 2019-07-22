@@ -49,7 +49,7 @@ decoderModel_train_decoder = function(FLAGS, config, mode,
                                       emb_size=FLAGS$emb_size,
                                       final_dim=as.integer(ncol(data_full)),
                                       dropout=FLAGS$dropout,
-                                      l2_weight=1e-4,
+                                      l2_weight=1e-10,
                                       batch_norm=FALSE)
 
       ## Global training step

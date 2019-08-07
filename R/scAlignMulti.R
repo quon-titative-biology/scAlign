@@ -178,7 +178,7 @@ scAlignMulti = function(sce.object,
     Sys.setenv(CUDA_VISIBLE_DEVICES=options$gpu.device);
 
     ## Hardware configurations for GPU if enabled
-    config = tf$ConfigProto(gpu_options = tf$GPUOptions(allow_growth=TRUE),
+    config = tf$ConfigProto(gpu_options = list(allow_growth=TRUE),
                             allow_soft_placement=TRUE,
                             log_device_placement=FALSE,
                             device_count = dict('GPU', 1))

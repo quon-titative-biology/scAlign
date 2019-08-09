@@ -5,7 +5,7 @@
 \title{Network small}
 \usage{
 decoder_small(inputs, complexity, final_dim, emb_size = 32,
-  l2_weight = 1e-04, dropout = TRUE, dropout_rate = 0.3,
+  l2_weight = 1e-08, dropout = TRUE, dropout_rate = 0.3,
   is_training = TRUE, batch_norm = TRUE, shared_ae = FALSE)
 }
 \arguments{

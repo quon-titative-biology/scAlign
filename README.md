@@ -3,32 +3,29 @@ A deep learning-based tool for alignment and integration of single cell genomic 
 
 ## Tutorials
 
-[Unsupervised alignment and projection of HSCs](https://github.com/quon-titative-biology/examples/blob/master/scAlign_paired_alignment/scAlign_kowalcyzk_et_al.md)
-
-[Multiway alignment using all pairs method](https://github.com/quon-titative-biology/examples/blob/master/scAlign_multiway_alignment/scAlign_multiway_pancreas.md)
-
-[Supervised/Semi-supervised alignment](https://github.com/quon-titative-biology/examples/blob/master/scAlign_supervised_alignment/scAlign_supervised_alignment.md)
+[Unsupervised aligment and projection of HSCs](https://github.com/quon-titative-biology/examples/blob/master/scAlign_kowalcyzk_et_al/scAlign_kowalcyzk_et_al.md)
 
 ## Updates
 
-#### (5/9/2019) Updated to version 1.0! Tutorials for multiple modes of operation now available. 
+#### (4/11/2019) Multi-dataset alignment added to github. Tutorial following shortly.
+
+#### (4/8/2019) Partial labels support.
+
+-- To use partial labels: set unlabeled cells to be NA in the label vector passed to `scAlignCreateObject`.
+
+#### TODO: Supervised and partially supervised tutorial.
+#### TODO: Pancreas islet multi-dataset alignment.
 
 ## R Package and Bioconductor
 
-Bioconductor for now will only support the Linux version of scAlign. For Windows and Mac please download/install the package directly from [github](https://github.com/quon-titative-biology/). 
-
-```
-install.packages('devtools')
-devtools::install_github(repo = 'quon-titative-biology/scAlign')
-library(scAlign)
-```
+Bioconductor for now will only support the Linux version of scAlign. For Windows and Mac please download the package directly from [github](https://github.com/quon-titative-biology/).
 
 ## Package requirements
 
 Guide to installing python and tensorflow on different operating systems.
 
 ### On Windows:
-1. Download Python 3.6.8. Note, newer versions of Python (e.g. 3.7) cannot use TensorFlow at this time. 
+1. Download Python 3.6.8. Note, newer versions of Python (e.g. 3.7) cannot use TensorFlow at this time.
 2. Make sure pip is included in the installation.
 3. Open Windows Command Prompt, or PowerShell.
 4. Navigate to your Python installation directory (for Windows 10, the default seems to be C:\Users\userid\AppData\Local\Programs\Python\Python36\Scripts, where userid is your own username).

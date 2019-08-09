@@ -252,7 +252,6 @@ decoder_medium = function(inputs,
                           kernel_initializer=tf$contrib$layers$xavier_initializer(),
                           kernel_regularizer=tf$contrib$layers$l2_regularizer(l2_weight),
                           use_bias=TRUE,
-                          bias_initializer=tf$ones_initializer(),
                           name='fc1')
     net = tf$layers$dropout(inputs=net, rate=dropout_rate, training=is_training, name='drop1')
     net = tf$layers$dense(inputs=net,
@@ -261,7 +260,6 @@ decoder_medium = function(inputs,
                           kernel_initializer=tf$contrib$layers$xavier_initializer(),
                           kernel_regularizer=tf$contrib$layers$l2_regularizer(l2_weight),
                           use_bias=TRUE,
-                          bias_initializer=tf$ones_initializer(),
                           name='fc2')
     net = tf$layers$dropout(inputs=net, rate=dropout_rate, training=is_training, name='drop2')
     proj = tf$layers$dense(inputs=net,
@@ -270,7 +268,6 @@ decoder_medium = function(inputs,
                            kernel_initializer=tf$contrib$layers$xavier_initializer(),
                            kernel_regularizer=tf$contrib$layers$l2_regularizer(l2_weight),
                            use_bias=TRUE,
-                           bias_initializer=tf$ones_initializer(),
                            name='fc3')
     return(proj)
 }

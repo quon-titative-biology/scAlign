@@ -210,7 +210,7 @@ scAlignCreateObject = function(sce.objects,
 #' @export
 scAlignOptions = function(steps = 15000, batch.size = 150,
                           learning.rate = 1e-4, log.every = 5000,
-                          architecture="large", batch.norm.layer = TRUE, dropout.layer = TRUE,
+                          architecture="large", batch.norm.layer = FALSE, dropout.layer = TRUE,
                           num.dim = 32, perplexity = 30, betas=0,
                           norm = TRUE, full.norm = FALSE,
                           early.stop = FALSE,

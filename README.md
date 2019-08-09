@@ -3,18 +3,15 @@ A deep learning-based tool for alignment and integration of single cell genomic 
 
 ## Tutorials
 
-[Unsupervised aligment and projection of HSCs](https://github.com/quon-titative-biology/examples/blob/master/scAlign_kowalcyzk_et_al/scAlign_kowalcyzk_et_al.md)
+[Unsupervised alignment and projection of HSCs](https://github.com/quon-titative-biology/examples/blob/master/scAlign_paired_alignment/scAlign_kowalcyzk_et_al.md)
+
+[Multiway alignment using all pairs method](https://github.com/quon-titative-biology/examples/blob/master/scAlign_multiway_alignment/scAlign_multiway_pancreas.md)
+
+[Supervised/Semi-supervised alignment](https://github.com/quon-titative-biology/examples/blob/master/scAlign_supervised_alignment/scAlign_supervised_alignment.md)
 
 ## Updates
 
-#### (4/11/2019) Multi-dataset alignment added to github. Tutorial following shortly.
-
-#### (4/8/2019) Partial labels support.
-
--- To use partial labels: set unlabeled cells to be NA in the label vector passed to `scAlignCreateObject`.
-
-#### TODO: Supervised and partially supervised tutorial.
-#### TODO: Pancreas islet multi-dataset alignment.
+#### (5/9/2019) Updated to version 1.0! Tutorials for multiple modes of operation now available. 
 
 ## R Package and Bioconductor
 

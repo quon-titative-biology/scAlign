@@ -4,14 +4,12 @@
 \alias{decoder_medium}
 \title{Network medium}
 \usage{
-decoder_medium(inputs, complexity, final_dim, emb_size = 32,
-  l2_weight = 1e-04, dropout = TRUE, dropout_rate = 0.3,
-  is_training = TRUE, batch_norm = TRUE, shared_ae = FALSE)
+decoder_medium(inputs, final_dim, emb_size = 32, l2_weight = 1e-08,
+  dropout = TRUE, dropout_rate = 0.3, is_training = TRUE,
+  batch_norm = TRUE, shared_ae = FALSE)
 }
 \arguments{
 \item{inputs}{Mini-batch placeholder}
-
-\item{complexity}{Determines the depth and width of an automatically created network}
 
 \item{final_dim}{Number of features in high dimensional data}
 
@@ -24,6 +22,8 @@ decoder_medium(inputs, complexity, final_dim, emb_size = 32,
 \item{is_training}{Determines if dropout and batch norm should be include in pass through network}
 
 \item{batch_norm}{Determines if batch normalization layers should be included}
+
+\item{complexity}{Determines the depth and width of an automatically created network}
 }
 \value{
 Neural network graph op

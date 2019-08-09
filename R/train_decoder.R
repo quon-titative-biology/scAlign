@@ -49,7 +49,7 @@ decoderModel_train_decoder = function(FLAGS, config, mode,
                                       emb_size=FLAGS$emb_size,
                                       final_dim=as.integer(ncol(data_full)),
                                       dropout=FLAGS$dropout,
-                                      l2_weight=1e-4,
+                                      l2_weight=1e-10,
                                       batch_norm=FALSE)
 
       ## Global training step
@@ -127,10 +127,11 @@ decoderModel_train_decoder = function(FLAGS, config, mode,
         if(((step %% 100) == 0) | (step == 1)){ print(paste0("Step: ", step, "    Loss: ", round(res[[3]], 4))); summary_writer$add_summary(res[[2]], (step)); }
 
         ## Save
-        if(((step %% FLAGS$log_every_n_steps == 0) | (step == FLAGS$max_steps_decoder)) & FLAGS$log.results == TRUE){
+        if((step %% FLAGS$log_every_n_steps == 0) & FLAGS$log.results == TRUE) {
           ## Save projections
           # proj_res = sess$run(test_proj, feed_dict=dict(test_in = data_emb))
-          # write.table(proj_res, file.path(paste0(FLAGS$logdir,'/', as.character(mode), '_decoder', '/projected_data_', as.character(step), '.csv')), sep=",", col.names=FALSE, row.names=FALSE)
+          proj_res = decoderModel_calc_projection(sess, all_data_emb, data_full, test_proj, test_in, FLAGS)
+          write.table(proj_res, file.path(paste0(FLAGS$logdir,'/', as.character(mode), '_decoder', '/projected_data_', as.character(step), '.csv')), sep=",", col.names=FALSE, row.names=FALSE)
           ## Summary reports (Tensorboard)
           summary_writer$add_summary(res[[2]], (step))
           ## Write out graph
@@ -138,8 +139,8 @@ decoderModel_train_decoder = function(FLAGS, config, mode,
         }
         ## Complete training
         if(step == FLAGS$max_steps_decoder){
-          # if(FLAGS$log.results == FALSE){ proj = decoderModel_calc_projection(sess, all_data_emb, data_full, test_proj, test_in, FLAGS) }
-          proj_res = sess$run(test_proj, feed_dict=dict(test_in = all_data_emb))
+          proj_res = decoderModel_calc_projection(sess, all_data_emb, data_full, test_proj, test_in, FLAGS)
+          #proj_res = sess$run(test_proj, feed_dict=dict(test_in = all_data_emb))
           return(proj_res)
         }
       }

@@ -1,8 +1,8 @@
 Package: scAlign
-Version: 1.1.0
+Version: 1.1.1
 Date: 2019-02-11
 Title: An alignment and integration method for single cell genomics
-Description: An unsupervised deep learning method for data alignment, integration and estimation of per-cell differences in -omic data (e.g. gene expression) across datasets (conditions, tissues, species). See Johansen and Quon (2019) <doi:10.1101/504944> for more details. scAlign requires that Tensorflow can be installed on the host system which may require dependencies outside of R. Further instructions for installing Tensorflow are available at: https://github.com/quon-titative-biology/scAlign or https://www.tensorflow.org/install.
+Description: An unsupervised deep learning method for data alignment, integration and estimation of per-cell differences in -omic data (e.g. gene expression) across datasets (conditions, tissues, species). See Johansen and Quon (2019) <doi:10.1101/504944> for more details.
 Authors@R:
    c(person(given = "Nelson",
             family = "Johansen",
@@ -18,7 +18,7 @@ biocViews: SingleCell, Transcriptomics, DimensionReduction, NeuralNetwork
 Depends: R (>= 3.5)
 Imports: SingleCellExperiment (>= 1.4),
          Seurat (>= 2.3.4),
-	 tensorflow,
+	       tensorflow,
 	 purrr,
          irlba,
 	 Rtsne,

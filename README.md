@@ -39,7 +39,7 @@ install_tensorflow(version = "gpu") ## Removing version will install CPU version
 
 Guide to installing python and Tensorflow on different operating systems.
 
-### Python:
+### (Python)
   #### On Windows:
   1. Download Python 3.6.8. Note, newer versions of Python (e.g. 3.7) cannot use TensorFlow at this time. 
   2. Make sure pip is included in the installation.
@@ -54,7 +54,8 @@ Guide to installing python and Tensorflow on different operating systems.
   3. brew update
   4. brew install python  # Python 3
   
-### Tensorflow:
+### (Tensorflow)
+In an R session:
   ```
   library(tensorflow)
   install_tensorflow(version = "gpu") ## Removing version will install CPU version of Tensorflow

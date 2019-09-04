@@ -37,7 +37,7 @@ install_tensorflow(version = "gpu") ## Removing version will install CPU version
 
 ## Package requirements
 
-Guide to installing python on different operating systems.
+Guide to installing python and Tensorflow on different operating systems.
 
 ### Python:
   #### On Windows:

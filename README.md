@@ -26,14 +26,6 @@ install.packages('devtools')
 devtools::install_github(repo = 'quon-titative-biology/scAlign')
 library(scAlign)
 ```
-## Package requirements (Tensorflow for R)
-
-Guide to installing tensorflow from R assuming a pre-existing version of Python on the system. 
-
-```
-library(tensorflow)
-install_tensorflow(version = "gpu") ## Removing version will install CPU version of Tensorflow
-```
 
 ## Package requirements
 

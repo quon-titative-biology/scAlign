@@ -16,6 +16,7 @@
 #' @import Seurat
 #' @import methods
 #' @import utils
+#' @import PMA
 #'
 #' @examples
 #'
@@ -52,6 +53,7 @@
 #'
 #' @export
 scAlignCreateObject = function(sce.objects,
+                               genes.use = NULL,
                                labels = list(),
                                pca.reduce = FALSE,
                                pcs.compute = 20,
@@ -72,9 +74,14 @@ scAlignCreateObject = function(sce.objects,
   if(is.null(names(sce.objects))){ names(sce.objects) = paste0("dataset", seq_len(length(sce.objects))) }
   if(!is.list(labels)) { stop("labels must be a list.") }
 
-  # if(length(sce.objects)==2
   ## Combine data into a common SCE
   combined.sce = Reduce(cbind, sce.objects)
+
+  ## If no gene set provided then use all genes in common across datasets
+  if(is.null(genes.use)){
+    genes.use = rownames(combined.sce)
+  }
+
   ## Ensure all objects are SCE
   if(!is(combined.sce, "SingleCellExperiment")){
     stop("Unsupported or inconsistent input type(s): Must be SingleCellExperiment objects")
@@ -122,7 +129,7 @@ scAlignCreateObject = function(sce.objects,
   ## Reduce to top 50 pcs
   if(pca.reduce == TRUE){
     print(paste("Computing partial PCA for top ", pcs.compute, " PCs."))
-    pca_results = irlba(A = t(assay(combined.sce, data.use)), nv = pcs.compute)
+    pca_results = irlba(A = t(assay(combined.sce, data.use)[genes.use,]), nv = pcs.compute)
     pca_mat = pca_results$u
     colnames(pca_mat) <- paste0("PC", seq_len(pcs.compute))
     reducedDim(combined.sce, "PCA") = pca_results$u
@@ -132,17 +139,12 @@ scAlignCreateObject = function(sce.objects,
   ## Reduce to top ccs
   if(cca.reduce == TRUE & (length(sce.objects) == 2)){
     print(paste("Computing CCA using Seurat."))
-    ## Run Seurat normalization
-    for(name in names(sce.objects)){
-      sce.objects[[name]] = CreateSeuratObject(assay(sce.objects[[name]], data.use), project = name)
-      sce.objects[[name]] = ScaleData(sce.objects[[name]], do.center=TRUE, do.scale=TRUE)
-    }
     ## Functional changes due to seurat version
     if(packageVersion("Seurat") >= 3.0){
       ## Reduce from gene to cc space
       combined = RunCCA(sce.objects[[names(sce.objects)[1]]],
                         sce.objects[[names(sce.objects)[2]]],
-                        features=rownames(combined.sce),
+                        features=genes.use,
                         num.cc=ccs.compute,
                         scale.data=TRUE)
       ## Load dim reduction into SCE object
@@ -152,7 +154,7 @@ scAlignCreateObject = function(sce.objects,
       ## Reduce from gene to cc space
       combined = RunCCA(sce.objects[[names(sce.objects)[1]]],
                         sce.objects[[names(sce.objects)[2]]],
-                        genes.use=rownames(combined.sce),
+                        genes.use=genes.use,
                         num.cc=ccs.compute,
                         scale.data=TRUE)
       ## Load dim reduction into SCE object
@@ -160,16 +162,18 @@ scAlignCreateObject = function(sce.objects,
       metadata(combined.sce)[["CCA.output"]] = GetGeneLoadings(combined, reduction.type = "cca")
     }
   }else if(cca.reduce == TRUE & length(sce.objects) > 2){
-    print("Please run multi-dataset CCA manually, CCA was not computed.")
+    print(paste("Computing MultiCCA using PMA."))
+    ## Run Multi CCA for input to scAlign
+    multi.cca.input <- lapply(sce.objects, function(seurat.obj){
+        assay(seurat.obj, slot='scale.data')[genes.use,]
+    })
+    multi.cca <- MultiCCA(multi.cca.input, ncomponents=ccs.compute, trace=FALSE, type="ordered")
+    multi.cca.data <- multi.cca$ws[[1]]
+    for(i in 2:length(multi.cca$ws)){
+        multi.cca.data <- rbind(multi.cca.data, multi.cca$ws[[i]])
+    }
+    reducedDim(combined.sce, "MultiCCA") = multi.cca.data
   }
-
-  # if(normalize == TRUE){
-  #   ## Run Seurat normalization
-  #   normalize.data = CreateSeuratObject(counts(combined.sce), project = name)
-  #   normalize.data = NormalizeData(normalize.data)
-  #   normalize.data = ScaleData(normalize.data, do.center=TRUE, do.scale=TRUE)
-  # }
-
   return(combined.sce)
 }
 

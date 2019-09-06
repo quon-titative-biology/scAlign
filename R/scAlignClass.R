@@ -139,11 +139,16 @@ scAlignCreateObject = function(sce.objects,
   ## Reduce to top ccs
   if(cca.reduce == TRUE & (length(sce.objects) == 2)){
     print(paste("Computing CCA using Seurat."))
+    seurat.objects = list()
+    for(name in names(sce.objects)){
+      seurat.objects[[name]] = CreateSeuratObject(assay(sce.objects[[name]], data.use), project = name)
+      seurat.objects[[name]] = ScaleData(seurat.objects[[name]], do.center=TRUE, do.scale=TRUE)
+    }
     ## Functional changes due to seurat version
     if(packageVersion("Seurat") >= 3.0){
       ## Reduce from gene to cc space
-      combined = RunCCA(sce.objects[[names(sce.objects)[1]]],
-                        sce.objects[[names(sce.objects)[2]]],
+      combined = RunCCA(seurat.objects[[names(sce.objects)[1]]],
+                        seurat.objects[[names(sce.objects)[2]]],
                         features=genes.use,
                         num.cc=ccs.compute,
                         scale.data=TRUE)
@@ -152,8 +157,8 @@ scAlignCreateObject = function(sce.objects,
       metadata(combined.sce)[["CCA.output"]] = Loadings(combined, reduction = "cca")
     }else{
       ## Reduce from gene to cc space
-      combined = RunCCA(sce.objects[[names(sce.objects)[1]]],
-                        sce.objects[[names(sce.objects)[2]]],
+      combined = RunCCA(seurat.objects[[names(sce.objects)[1]]],
+                        seurat.objects[[names(sce.objects)[2]]],
                         genes.use=genes.use,
                         num.cc=ccs.compute,
                         scale.data=TRUE)

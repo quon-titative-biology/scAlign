@@ -179,6 +179,14 @@ scAlignCreateObject = function(sce.objects,
     }
     reducedDim(combined.sce, "MultiCCA") = multi.cca.data
   }
+
+  # if(normalize == TRUE){
+  #   ## Run Seurat normalization
+  #   normalize.data = CreateSeuratObject(counts(combined.sce), project = name)
+  #   normalize.data = NormalizeData(normalize.data)
+  #   normalize.data = ScaleData(normalize.data, do.center=TRUE, do.scale=TRUE)
+  # }
+
   return(combined.sce)
 }
 

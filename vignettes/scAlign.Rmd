@@ -27,9 +27,14 @@ The following is a walkthrough of a typical alignment problem for `scAlign` and 
 ## Installation
 
 ```R
-if (!requireNamespace("BiocManager", quietly = TRUE))
-    install.packages("BiocManager")
-BiocManager::install("scAlign")
+## Install scAlign
+install.packages('devtools')
+devtools::install_github(repo = 'quon-titative-biology/scAlign')
+library(scAlign)
+
+## Install Tensorflow 
+library(tensorflow)
+install_tensorflow(version = "gpu") ## Removing version will install CPU version of Tensorflow
 ```
 
 ```

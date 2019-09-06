@@ -18,7 +18,7 @@ biocViews: SingleCell, Transcriptomics, DimensionReduction,
         NeuralNetwork
 Depends: R (>= 3.5)
 Imports: SingleCellExperiment (>= 1.4), Seurat (>= 2.3.4), tensorflow,
-        purrr, irlba, Rtsne, ggplot2, methods, utils, FNN
+        purrr, irlba, Rtsne, ggplot2, methods, utils, FNN, PMA
 Suggests: knitr, rmarkdown, testthat
 VignetteBuilder: knitr
 SystemRequirements: python (< 3.7), tensorflow

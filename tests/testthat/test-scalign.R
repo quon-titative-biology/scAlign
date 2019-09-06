@@ -78,6 +78,7 @@ test_that("Alignment produces consistent results", {
                        options=scAlignOptions(steps=500,
                                               log.every=500,
                                               norm=TRUE,
+					      batch.norm.layer=TRUE,
                                               early.stop=FALSE),
                        encoder.data="scale.data",
                        supervised='none',

@@ -3,6 +3,7 @@
 #' @return Initialized scAlign object
 #'
 #' @param sce.objects List of Seurat or Matrix objects; sample x feature.
+#' @param genes.use Genes to use during PCA/CCA, all genes used as default.
 #' @param labels List of labels for each object.
 #' @param data.use Specificies which data to use from a Seurat object for dimensionality reduction.
 #' @param pca.reduce Initial step of dimensionality be performced by PCA.

@@ -17,7 +17,7 @@ BugReports: https://github.com/quon-titative-biology/scAlign/issues
 biocViews: SingleCell, Transcriptomics, DimensionReduction,
         NeuralNetwork
 Depends: R (>= 3.5), SingleCellExperiment (>= 1.4), Seurat (>= 2.3.4), tensorflow,
-         purrr, irlba, Rtsne, ggplot2, methods, utils, FNN, PMA
+         purrr, irlba, Rtsne, ggplot2, methods, utils, FNN
 Suggests: knitr, rmarkdown, testthat
 VignetteBuilder: knitr
 SystemRequirements: python (< 3.7), tensorflow

@@ -60,6 +60,7 @@ scAlignCreateObject = function(sce.objects,
                                pcs.compute = 20,
                                cca.reduce = FALSE,
                                ccs.compute = 15,
+                               cca.standardize = TRUE,
                                data.use = "scale.data",
                                project.name = "scAlignProject"){
 
@@ -168,17 +169,11 @@ scAlignCreateObject = function(sce.objects,
       metadata(combined.sce)[["CCA.output"]] = GetGeneLoadings(combined, reduction.type = "cca")
     }
   }else if(cca.reduce == TRUE & length(sce.objects) > 2){
-    print(paste("Computing MultiCCA using PMA."))
     ## Run Multi CCA for input to scAlign
     multi.cca.input <- lapply(sce.objects, function(seurat.obj){
         assay(seurat.obj, slot='scale.data')[genes.use,]
     })
-    multi.cca <- MultiCCA(multi.cca.input, ncomponents=ccs.compute, trace=FALSE, type="ordered")
-    multi.cca.data <- multi.cca$ws[[1]]
-    for(i in 2:length(multi.cca$ws)){
-        multi.cca.data <- rbind(multi.cca.data, multi.cca$ws[[i]])
-    }
-    reducedDim(combined.sce, "MultiCCA") = multi.cca.data
+    reducedDim(combined.sce, "MultiCCA") = RunMultiCCA(multi.cca.input, num.ccs = ccs.compute, standardize = cca.standardize)
   }
   return(combined.sce)
 }

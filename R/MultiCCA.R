@@ -1,5 +1,16 @@
-library(irlba)
-
+#' Seurat V2 MultiCCA
+#'
+#' @return CCA results
+#'
+#' @param mat.list List of matrix objects;
+#' @param niter Optimization parameter
+#' @param num.ccs Number of dimensions
+#' @param standardize To standardize data
+#'
+#' @import Seurat
+#' @import irlba
+#'
+#' @keywords internal
 RunMultiCCA <- function(
   mat.list,
   niter = 25,
@@ -59,6 +70,9 @@ RunMultiCCA <- function(
   return(cca.data)
 }
 
+#' Seurat V2 MultiCCA
+#'
+#' @keywords internal
 UpdateW <- function(mat.list, i, num.sets, ws, ws.final){
   tots <- 0
   for(j in (1:num.sets)[-i]){
@@ -70,6 +84,9 @@ UpdateW <- function(mat.list, i, num.sets, ws, ws.final){
   return(w)
 }
 
+#' Seurat V2 MultiCCA
+#'
+#' @keywords internal
 GetCrit <- function(mat.list, ws, num.sets){
   crit <- 0
   for(i in 2:num.sets){
@@ -80,6 +97,9 @@ GetCrit <- function(mat.list, ws, num.sets){
   return(crit)
 }
 
+#' Seurat V2 MultiCCA
+#'
+#' @keywords internal
 l2n <- function(vec){
   a <- sqrt(sum(vec^2))
   if(a==0){

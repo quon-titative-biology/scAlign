@@ -10,6 +10,7 @@
 #' @param pcs.compute Number of PCs to retrain for alignment.
 #' @param cca.reduce Initial step of dimensionality be performced by CCA.
 #' @param ccs.compute Number of CCs to retrain for alignment.
+#' @param cca.standardize Standardize the data matrices before CCA.
 #' @param project.name Name for current scAlign project.
 #'
 #' @import SingleCellExperiment
@@ -17,7 +18,6 @@
 #' @import Seurat
 #' @import methods
 #' @import utils
-#' @import PMA
 #'
 #' @examples
 #'

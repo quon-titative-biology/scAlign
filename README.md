@@ -9,6 +9,13 @@ A deep learning-based tool for alignment and integration of single cell genomic 
 
 [Supervised/Semi-supervised alignment](https://github.com/quon-titative-biology/examples/blob/master/scAlign_supervised_alignment/scAlign_supervised_alignment.md)
 
+## Contributors
+
+[Chang Kim](https://github.com/cnk113) | 
+------------ |
+<img src="https://avatars1.githubusercontent.com/u/21249710?v=4&s=25" width="150" height="150" /> | 
+
+
 ## Updates
 
 #### (9/4/2019) Updated install instructions to include Tensorflow for R method..

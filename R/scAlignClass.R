@@ -60,6 +60,7 @@ scAlignCreateObject = function(sce.objects,
                                pcs.compute = 20,
                                cca.reduce = FALSE,
                                ccs.compute = 15,
+                               cca.standardize = TRUE,
                                data.use = "scale.data",
                                project.name = "scAlignProject"){
 
@@ -173,7 +174,7 @@ scAlignCreateObject = function(sce.objects,
     multi.cca.input <- lapply(sce.objects, function(seurat.obj){
         assay(seurat.obj, slot='scale.data')[genes.use,]
     })
-    multi.cca <- MultiCCA(multi.cca.input, ncomponents=ccs.compute, trace=FALSE, type="ordered")
+    multi.cca <- MultiCCA(multi.cca.input, ncomponents=ccs.compute, trace=FALSE, type="standard", standardize=cca.standardize)
     multi.cca.data <- multi.cca$ws[[1]]
     for(i in 2:length(multi.cca$ws)){
         multi.cca.data <- rbind(multi.cca.data, multi.cca$ws[[i]])

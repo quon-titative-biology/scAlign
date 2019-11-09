@@ -12,6 +12,8 @@ scAlignCreateObject(sce.objects, genes.use = NULL, labels = list(),
 \arguments{
 \item{sce.objects}{List of Seurat or Matrix objects; sample x feature.}
 
+\item{genes.use}{Genes to use during PCA/CCA, all genes used as default.}
+
 \item{labels}{List of labels for each object.}
 
 \item{pca.reduce}{Initial step of dimensionality be performced by PCA.}

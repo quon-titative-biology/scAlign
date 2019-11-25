@@ -3,6 +3,8 @@ A deep learning-based tool for alignment and integration of single cell genomic 
 
 ## Tutorials
 
+First follow the install instructions below, at the bottom of the page, before following the tutorials.
+
 [Unsupervised alignment and projection of HSCs](https://github.com/quon-titative-biology/examples/blob/master/scAlign_paired_alignment/scAlign_kowalcyzk_et_al.md)
 
 [Multiway alignment using all pairs method](https://github.com/quon-titative-biology/examples/blob/master/scAlign_multiway_alignment/scAlign_multiway_pancreas.md)
@@ -18,7 +20,7 @@ A deep learning-based tool for alignment and integration of single cell genomic 
 
 ## Updates
 
-#### (9/4/2019) Updated install instructions to include Tensorflow for R method..
+#### (9/4/2019) Updated install instructions to include Tensorflow for R method.
 
 #### (5/9/2019) Updated to version 1.0! Tutorials for multiple modes of operation now available. 
 
@@ -36,7 +38,7 @@ library(scAlign)
 
 ## Package requirements
 
-Guide to installing python and Tensorflow on different operating systems.
+Guide to installing python and Tensorflow on different operating systems. Note Python 3.6.x should be installed, not Python 3.7 or higher.
 
 ### (Python)
   #### On Windows:

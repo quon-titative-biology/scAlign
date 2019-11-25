@@ -38,7 +38,7 @@ library(scAlign)
 
 ## Package requirements
 
-Guide to installing python and Tensorflow on different operating systems. Note Python 3.6.x should be installed, not Python 3.7 or higher.
+scAlign has three dependencies: Python 3.6, tensorflow (the R package), and tensorflow (the Python package). This is a guide to installing python and Tensorflow on different operating systems. Note Python 3.6.x should be installed, not Python 3.7 or higher.
 
 ### (Python)
   #### On Windows:
@@ -58,8 +58,9 @@ Guide to installing python and Tensorflow on different operating systems. Note P
 ### (Tensorflow)
 In an R session:
   ```
-  install.packages('tensorflow')
+  install.packages('tensorflow') #install the tensorflow R package (that sits on top of the TensorFlow python package)
   library(tensorflow)
-  install_tensorflow() ## installs CPU version of TensorFlow, use this if you don't have a GPU.
-  #install_tensorflow(version = "gpu") # Use this to install GPU version of Tensorflow
+  
+  install_tensorflow() ## installs CPU version of TensorFlow Python package, use this if you don't have a GPU.
+  #install_tensorflow(version = "gpu") # Use this to install GPU version of Tensorflow Python package
   ```

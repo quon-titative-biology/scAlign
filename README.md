@@ -58,6 +58,7 @@ Guide to installing python and Tensorflow on different operating systems. Note P
 ### (Tensorflow)
 In an R session:
   ```
+  install.packages('tensorflow')
   library(tensorflow)
   install_tensorflow(version = "gpu") ## Removing version will install CPU version of Tensorflow
   ```

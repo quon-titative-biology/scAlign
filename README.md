@@ -60,5 +60,6 @@ In an R session:
   ```
   install.packages('tensorflow')
   library(tensorflow)
-  install_tensorflow(version = "gpu") ## Removing version will install CPU version of Tensorflow
+  install_tensorflow() ## installs CPU version of TensorFlow, use this if you don't have a GPU.
+  #install_tensorflow(version = "gpu") # Use this to install GPU version of Tensorflow
   ```

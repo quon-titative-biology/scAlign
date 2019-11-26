@@ -138,7 +138,7 @@ scAlignMulti = function(sce.object,
       tensorflow::flag_numeric('decay_factor', 0.33, 'Learning rate decay factor.'),
       tensorflow::flag_numeric('decay_steps', floor((3/5)*options$steps), 'Learning rate decay interval in steps.'),
       tensorflow::flag_integer('max_steps', options$steps, 'Number of training steps.'),
-      tensorflow::flag_integer('max_steps_decoder', max(options$steps, 10000), 'Number of training steps.'),
+      tensorflow::flag_integer('max_steps_decoder', options$steps.decoder, 'Number of training steps.'),
       tensorflow::flag_integer('random_seed', options$seed, 'Integer random seed used for labeled set selection.'),
       ## Loss function: walker loss for object1 ##
       tensorflow::flag_numeric('walker_weight', 1.0, 'Weight for walker loss.'),

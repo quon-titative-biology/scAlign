@@ -10,6 +10,7 @@
 #' @param labels Object labels
 #' @param cols Colours for plot
 #' @param title ggplot title
+#' @param point.size Size of geom_point
 #' @param legend Determines if legend should be drawn
 #' @param seed Random seed for reproducability
 #' @param ... Additional arguments to Rtsne function

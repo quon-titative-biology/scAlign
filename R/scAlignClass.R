@@ -213,7 +213,7 @@ scAlignCreateObject = function(sce.objects,
 #'                        architecture="large")
 #'
 #' @export
-scAlignOptions = function(steps = 15000, batch.size = 150,
+scAlignOptions = function(steps = 15000, steps.decoder=10000, batch.size = 150,
                           learning.rate = 1e-4, log.every = 5000,
                           architecture="large", batch.norm.layer = FALSE, dropout.layer = TRUE,
                           num.dim = 32, perplexity = 30, betas=0,
@@ -224,10 +224,11 @@ scAlignOptions = function(steps = 15000, batch.size = 150,
                           classifier.delay=NA, gpu.device = '0',
                           seed = 1234){
 
-     valid_opts = c("steps", "batch.size", "learning.rate", "log.every", "architecture", "batch.norm.layer", "dropout.layer",
+     valid_opts = c("steps", "steps.decoder", "batch.size", "learning.rate", "log.every", "architecture", "batch.norm.layer", "dropout.layer",
                    "num.dim", "perplexity", "betas", "norm", "full.norm", "early.stop", "walker.loss",
                    "reconc.loss", "walker.weight", "classifier.weight", "classifier.delay", "gpu.device", "seed")
      opts = data.frame(steps = steps,
+                       steps.decoder=steps.decoder,
                        batch.size = batch.size,
                        learning.rate = learning.rate,
                        log.every = log.every,

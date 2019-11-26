@@ -70,16 +70,23 @@
 #'                            perplexity=30)
 #'
 #' @export
-PlotTSNE = function(object, data.use, labels.use="scAlign.labels", cols=NULL, title="", legend="none", seed=1234, ...){
+PlotTSNE = function(object, data.use, labels.use="scAlign.labels", cols=NULL, title="", legend="none", point.size=3, seed=1234, ...){
     x=y=NULL ## Appease R checker, doesn't like ggplot2 aes() variables
     tryCatch({
-      res = Rtsne(reducedDim(object, data.use), ...)
+      if(data.use %in% names(assays(scAlignHSC))){
+        res = Rtsne(assay(object, data.use), ...)
+      }else if(data.use %in% names(reducedDims(scAlignHSC))){
+        res = Rtsne(reducedDim(object, data.use), ...)
+      }else{
+        print("Data type not defined in assays or reducedDims")
+        return()
+      }
       labels = as.character(colData(object)[,labels.use])
       plot.me <- data.frame(x=res$Y[,1], y=res$Y[,2], labels=labels, stringsAsFactors=FALSE)
       tsne.plot <- ggplot(plot.me, aes(x=x, y=y, colour = labels))
       if(!is.null(cols)){ tsne.plot <- tsne.plot + scale_colour_manual(values=cols) }
       tsne.plot <- tsne.plot +
-                       geom_point(size=3) +
+                       geom_point(size=point.size) +
                        xlab('t-SNE 1') +
                        ylab('t-SNE 2') +
                        ggtitle(title) +

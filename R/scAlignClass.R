@@ -66,12 +66,18 @@ scAlignCreateObject = function(sce.objects,
 
   ## Grab version of scAlign being run
   version = packageVersion("scAlign")
-
-  ## Ensure all objects are SCE
-  if(all(vapply(sce.objects, class, character(1)) == "SingleCellExperiment") == FALSE){
-    stop("Unsupported or inconsistent input type(s): Must be SingleCellExperiment objects")
+  
+  ## Ensure all objects are SCE or converted to SCE 
+  if(all(vapply(sce.objects, class, character(1)) == "Seurat") == TRUE){
+    if(is.null(genes.use)){
+      sce.objects <- as.SingleCellExperimentList(sce.objects)
+    }else{
+      sce.objects <- as.SingleCellExperimentList(sce.objects, genes.use)
+    }
+  }else if(all(vapply(sce.objects, class, character(1)) == "SingleCellExperiment") == FALSE){
+    stop("Unsupported or inconsistent input type(s): Must be Seurat or SingleCellExperiment objects")
   }
-
+  
   ## Ensure data list has names
   if(is.null(names(sce.objects))){ names(sce.objects) = paste0("dataset", seq_len(length(sce.objects))) }
   if(!is.list(labels)) { stop("labels must be a list.") }

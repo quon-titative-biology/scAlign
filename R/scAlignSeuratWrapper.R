@@ -125,7 +125,9 @@ ExtractGenes = function(seurat.obj1,
 #'         repel = TRUE)
 #' 
 #' @export
-SelectColors <- function(seurat.obj, gradient = FALSE, value = "celltype"){
+SelectColors <- function(seurat.obj, 
+                         gradient = FALSE, 
+                         value = "celltype"){
   names <- GetCharMetadata(seurat.obj, value = value)
   if(gradient == FALSE && length(names) <= 20){
     celltype_colors_unique <- c('#e6194b', '#3cb44b', '#ffe119', '#4363d8',
@@ -142,15 +144,17 @@ SelectColors <- function(seurat.obj, gradient = FALSE, value = "celltype"){
 }
 
 #' Creates a 2d array of variance values calculated across the 3rd decoder dimension of a 3d array of decoder matrices.
-#' Unless specified, automatically calculates highly variable genes and orders the combined variance matrix in decreasing order, for later graphical analysis analysis.
+#' Unless specified, automatically calculates highly variable genes and orders the combined variance matrix in decreasing order,
+#' for later graphical analysis analysis.
 #' 
-#' @return A named vector of unique hexedecimal color values, either generated from a preselected
-#'         vector of 20 unique colors, or from a sequence of colors in hsv colorspace.
+#' @return A list of arrays, the fist being the variance calculated across decoders, the second a list of order gene indices
 #'
-#' @param seurat.obj A singular preprocessed Seurat object
-#' @param gradient Setting to TRUE will use a sequence of hsv colors instead of 20 unique colors,
-#'                 useful for comparisons of more than 20 cell types.
-#' @param names Setting to TRUE will return the celltype data slot as a variable "names"
+#' @param all_data_combined A 3D matrix of decoder values across conditions, (cells x genes x condition)
+#' @param seurat.obj the reference, aligned Seurat object used to correctly populate the rownames of the output array 
+#' @param genes.use The gene names to use. See ExtractGenes for more information.
+#' @param output.length The number of genes to output, important for later graphical analysis.
+#' @param decreasing A logical value for ordering the 2nd value of the output list. Setting to TRUE will output genes in order from highest to lowest mean variance.
+#' @param return.genes A logical vector defaulted to TRUE. Setting to FALSE will only output the all_data_var, not high_var_genes 
 #'
 #' @seealso \code{\link{as.SingleCellExperimentList}}
 #' @seealso \code{\link{ExtractGenes}}
@@ -159,12 +163,6 @@ SelectColors <- function(seurat.obj, gradient = FALSE, value = "celltype"){
 #' @seealso \code{\link{GetCharMetadata}}
 #'
 #' @examples
-#' DimPlot(object = seurat.obj,
-#'         reduction = "tsne",
-#'         cols = SelectColors(seurat.obj),
-#'         group.by = "celltype",
-#'         label = TRUE,
-#'         repel = TRUE)
 #'         
 #' @import SingleCellExperiment
 #' @import Seurat
@@ -234,7 +232,9 @@ MeanDecoderVariance <- function(all_data_var){
 #' @import Seurat
 #' 
 #' @export
-GetCharMetadata <- function(seurat.obj, value = "celltype", unique = TRUE){
+GetCharMetadata <- function(seurat.obj, 
+                            value = "celltype", 
+                            unique = TRUE){
   if (unique == TRUE){
     cell_names <- unlist(c(unique(FetchData(object = seurat.obj, vars = c(value)))))
   }else if (unique == FALSE){

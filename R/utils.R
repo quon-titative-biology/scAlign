@@ -74,9 +74,9 @@
 PlotTSNE = function(object, data.use, labels.use="scAlign.labels", cols=NULL, title="", legend="none", point.size=3, seed=1234, ...){
     x=y=NULL ## Appease R checker, doesn't like ggplot2 aes() variables
     tryCatch({
-      if(data.use %in% names(assays(scAlignHSC))){
+      if(data.use %in% names(assays(object))){
         res = Rtsne(assay(object, data.use), ...)
-      }else if(data.use %in% names(reducedDims(scAlignHSC))){
+      }else if(data.use %in% names(reducedDims(object))){
         res = Rtsne(reducedDim(object, data.use), ...)
       }else{
         print("Data type not defined in assays or reducedDims")

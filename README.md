@@ -17,6 +17,9 @@ First follow the install instructions below, at the bottom of the page, before f
 ------------ |
 <img src="https://avatars1.githubusercontent.com/u/21249710?v=4&s=25" width="150" height="150" /> | 
 
+[Tyler Brassel](https://github.com/tbrassel) | 
+------------ |
+<img src="https://avatars3.githubusercontent.com/u/37461300?s=460&v=4" width="150" height="150" /> | 
 
 ## Updates
 

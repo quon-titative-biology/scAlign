@@ -15,7 +15,7 @@ First follow the install instructions below, at the bottom of the page, before f
 
 [Chang Kim](https://github.com/cnk113) | 
 ------------ |
-<img src="https://avatars1.githubusercontent.com/u/21249710?v=4&s=25" width="150" height="150" /> | 
+<img src="https://avatars1.githubusercontent.com/u/21249710?v=4&s=25" width="150" height="150" /> |
 
 [Tyler Brassel](https://github.com/tbrassel) | 
 ------------ |

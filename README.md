@@ -13,13 +13,9 @@ First follow the install instructions below, at the bottom of the page, before f
 
 ## Contributors
 
-[Chang Kim](https://github.com/cnk113) | 
------------- |
-<img src="https://avatars1.githubusercontent.com/u/21249710?v=4&s=25" width="150" height="150" /> |
-
-[Tyler Brassel](https://github.com/tbrassel) | 
------------- |
-<img src="https://avatars3.githubusercontent.com/u/37461300?s=460&v=4" width="150" height="150" /> | 
+[Chang Kim](https://github.com/cnk113) | [Tyler Brassel](https://github.com/tbrassel) | 
+------------ | ------------ |
+<img src="https://avatars1.githubusercontent.com/u/21249710?v=4&s=25" width="150" height="150" /> | <img src="https://avatars3.githubusercontent.com/u/37461300?s=460&v=4" width="150" height="150" /> | 
 
 ## Updates
 

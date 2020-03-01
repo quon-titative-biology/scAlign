@@ -47,14 +47,14 @@ scAlign has three dependencies: Python 3.6.8, tensorflow (the R package), and te
   2. Make sure pip is included in the installation.
 
   #### Alternative (On Ubuntu):
-  1. sudo apt update
-  2. sudo apt install python3-dev python3-pip
+  1. `sudo apt update`
+  2. `sudo apt install python3-dev python3-pip`
 
   #### Alternative (On MacOS):
-  1. /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
-  2. export PATH="/usr/local/bin:/usr/local/sbin:$PATH"
-  3. brew update
-  4. brew install python  # Python 3
+  1. `/usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"`
+  2. `export PATH="/usr/local/bin:/usr/local/sbin:$PATH"`
+  3. `brew update`
+  4. `brew install python  # Python 3`
   
 ### (Tensorflow)
 In an R session:

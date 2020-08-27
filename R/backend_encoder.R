@@ -80,7 +80,7 @@ encoderModel_add_logit_loss = function(logits, labels, weight=1.0){
    ## Add clossifier
    with(tf$name_scope('loss_classifier'), {
        logit_loss = tf$losses$softmax_cross_entropy(
-           tf$one_hot(labels, logits$get_shape()[-1]),
+           tf$one_hot(labels, logits$get_shape()[[logits$get_shape()]]),
            logits,
            scope='loss_logit',
            weights=weight)

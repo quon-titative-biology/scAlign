@@ -174,7 +174,7 @@ scAlign = function(sce.object,
       ## Testing options ##
       tensorflow::flag_integer('mini_batch', 50, 'Number samples per testing batch.'),
       ## Hardware ##
-      tensorflow::flag_string('cuda_device', options$gpu.device, 'Select the GPU for this job'))
+      tensorflow::flag_string('cuda_device', options$gpu.device, 'Select the GPU for this job'), arguments = c())
 
     ## Verbosity of tensorflow output. Filters: (1 INFO) (2 WARNINGS) (3 ERRORS)
     Sys.setenv(TF_CPP_MIN_LOG_LEVEL=3);

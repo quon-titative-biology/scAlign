@@ -144,10 +144,10 @@ encoderModel_train_encoder_multi = function(FLAGS, CV, config,
       if(FLAGS$random_seed != 0){tf$set_random_seed(FLAGS$random_seed)}
 
       # Normalize full data matrix
-      if(FLAGS$full_norm == TRUE){
-        source_data = sess$run(tf$nn$l2_normalize(source_data, axis=as.integer(1)))
-        target_data = sess$run(tf$nn$l2_normalize(target_data, axis=as.integer(1)))
-      }
+      # if(FLAGS$full_norm == TRUE){
+      #   source_data = sess$run(tf$nn$l2_normalize(source_data, axis=as.integer(1)))
+      #   target_data = sess$run(tf$nn$l2_normalize(target_data, axis=as.integer(1)))
+      # }
 
       # for(op in tf$get_default_graph()$get_operations()){print(op$name)}
 

@@ -202,8 +202,8 @@ encoderModel_train_encoder_multi = function(FLAGS, CV, config,
         if(((step %% FLAGS$log_every_n_steps == 0) | (step == 1) | (step == FLAGS$max_steps)) & FLAGS$log.results == TRUE){
           if(step > 1){ print("==================== Saving results =====================") } ## Suppress first save
           ## Save embeddings
-          data_norm = sess$run(tf$nn$l2_normalize(data, axis=as.integer(1), name=paste0("data")))
-          emb = encoderModel_calc_embedding(sess, data_norm, test_emb, test_in, FLAGS)
+          # data_norm = sess$run(tf$nn$l2_normalize(data, axis=as.integer(1), name=paste0("data")))
+          emb = encoderModel_calc_embedding(sess, data, test_emb, test_in, FLAGS)  # replaced data_norm with data
           write.table(emb, file.path(paste0(FLAGS$logdir, '/model_', as.character(CV), '/train/emb_activations_', as.character(step), '.csv')), sep=",", col.names=FALSE, row.names=FALSE)
 
           ## Write summaries

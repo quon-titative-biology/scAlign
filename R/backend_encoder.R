@@ -283,7 +283,10 @@ encoderModel_calc_embedding = function(sess, data, endpoint, test_in, FLAGS, bat
   emb = matrix(nrow=nrow(data), ncol=FLAGS$emb_size, 0)
   for(i in seq(1,nrow(data),batch_size)){
     ix_end = min((i+(batch_size-1)), nrow(data))
-    emb[i:ix_end,] = sess$run(endpoint, dict(test_in=data[i:ix_end,,drop=FALSE]))
+    data_in = data[i:ix_end,,drop=FALSE]
+    if (FLAGS$norm)
+      data_in = scale(data_in, center = F, scale = colSums(data_in))
+    emb[i:ix_end,] = sess$run(endpoint, dict(test_in=data_in))
   }
   return(emb)
 }

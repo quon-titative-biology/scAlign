@@ -296,7 +296,7 @@ encoderModel_train_encoder = function(FLAGS, CV, config,
 
         ## Exceeded patience, now ready to stop. (Patience is == TRUE once patience_count >= 50, otherwise [0-49])
         if(is.logical(patience_count)){
-          FLAGS$max_steps = step + 1000 ## 1000 more steps with fast learning_rate decay
+          #FLAGS$max_steps = step + 1000 ## 1000 more steps with fast learning_rate decay
           FLAGS$early_stopping = FALSE
           patience_count = -1
           print("=========================================================")

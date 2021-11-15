@@ -40,13 +40,13 @@ library(scAlign)
 
 ## Package requirements
 
-scAlign has three dependencies: Python 3.6.8, tensorflow (the R package), and tensorflow (the Python package). This is a guide to installing python and Tensorflow on different operating systems. Note Python 3.6.x should be installed, not Python 3.7 or higher.
+scAlign has three dependencies: Python 3, tensorflow (the R package), and tensorflow (the Python package). This is a guide to installing python and Tensorflow on different operating systems. 
 
 ### (Python)
   #### All platforms:
-  1. [Download install binaries for Python 3.6.8 here](https://www.python.org/downloads/release/python-368/)
+  1. [Download install binaries for Python 3 here](https://www.python.org/downloads/release/)
   #### Alternative (On Windows):
-  1. Download Python 3.6.8. Note, newer versions of Python (e.g. 3.7) cannot use TensorFlow at this time. 
+  1. Download Python 3
   2. Make sure pip is included in the installation.
 
   #### Alternative (On Ubuntu):

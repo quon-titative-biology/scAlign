@@ -64,7 +64,4 @@ In an R session:
   ```
   install.packages('tensorflow') #install the tensorflow R package (that sits on top of the TensorFlow python package)
   library(tensorflow)
-  
-  install_tensorflow(version="1.15rc2") ## installs CPU version of TensorFlow Python package, use this if you don't have a GPU.
-  #install_tensorflow(version = "gpu", version="1.15rc2") # Use this to install GPU version of Tensorflow Python package
   ```

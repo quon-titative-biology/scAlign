@@ -20,6 +20,8 @@ First follow the install instructions below, at the bottom of the page, before f
 
 ## Updates
 
+#### (11/15/2021) Updated to Tensorflow 2. Now req. (Tensorflow >= 2.0)
+
 #### (9/4/2019) Updated install instructions to include Tensorflow for R method.
 
 #### (5/9/2019) Updated to version 1.0! Tutorials for multiple modes of operation now available. 

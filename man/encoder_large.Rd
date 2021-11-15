@@ -4,9 +4,17 @@
 \alias{encoder_large}
 \title{Network large}
 \usage{
-encoder_large(inputs, input_size = NULL, complexity = 3,
-  emb_size = 32, l2_weight = 1e-04, dropout = TRUE,
-  dropout_rate = 0.3, is_training = TRUE, batch_norm = TRUE)
+encoder_large(
+  inputs,
+  input_size = NULL,
+  complexity = 3,
+  emb_size = 32,
+  l2_weight = 1e-04,
+  dropout = TRUE,
+  dropout_rate = 0.3,
+  is_training = TRUE,
+  batch_norm = TRUE
+)
 }
 \arguments{
 \item{inputs}{Mini-batch placeholder}

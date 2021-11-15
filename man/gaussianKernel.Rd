@@ -4,8 +4,14 @@
 \alias{gaussianKernel}
 \title{Computes gaussian kernel matrix}
 \usage{
-gaussianKernel(data, data_shape, labels = NULL, method = NULL,
-  perplexity = 30, diag = "zero")
+gaussianKernel(
+  data,
+  data_shape,
+  labels = NULL,
+  method = NULL,
+  perplexity = 30,
+  diag = "zero"
+)
 }
 \arguments{
 \item{data}{cell x feature data matrix}

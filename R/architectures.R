@@ -26,21 +26,21 @@ encoder_small = function(inputs,
                          is_training=TRUE,
                          batch_norm=TRUE){
 
-    inputs = tf$cast(inputs, tf$float32)
-    net = tf$layers$dense(inputs=inputs,
+    inputs = tf$compat$v1$cast(inputs, tf$compat$v1$float32)
+    net = tf$compat$v1$layers$dense(inputs=inputs,
                           units=128,
-                          activation=tf$nn$relu,
-                          kernel_initializer=tf$contrib$layers$xavier_initializer(),
-                          kernel_regularizer=tf$contrib$layers$l2_regularizer(l2_weight),
+                          activation=tf$compat$v1$nn$relu,
+                          ##kernel_initializer=tf$compat$v1$contrib$layers$xavier_initializer(),
+                          kernel_regularizer=tf$keras$regularizers$l2(l2_weight),
                           use_bias=TRUE,
                           name='fc1')
-    if(batch_norm == TRUE){net = tf$layers$batch_normalization(net, training=is_training, name='batch_norm_1')}
-    if(dropout == TRUE){net = tf$layers$dropout(inputs=net, rate=dropout_rate, training=is_training, name='drop1')}
-    emb = tf$layers$dense(inputs=net,
+    if(batch_norm == TRUE){net = tf$compat$v1$layers$batch_normalization(net, training=is_training, name='batch_norm_1')}
+    if(dropout == TRUE){net = tf$compat$v1$layers$dropout(inputs=net, rate=dropout_rate, training=is_training, name='drop1')}
+    emb = tf$compat$v1$layers$dense(inputs=net,
                           units=emb_size,
                           activation=NULL,
-                          kernel_initializer=tf$contrib$layers$xavier_initializer(),
-                          kernel_regularizer=tf$contrib$layers$l2_regularizer(l2_weight),
+                          ##kernel_initializer=tf$compat$v1$contrib$layers$xavier_initializer(),
+                          kernel_regularizer=tf$keras$regularizers$l2(l2_weight),
                           use_bias=TRUE,
                           name='fc2')
     return(emb)
@@ -74,30 +74,30 @@ encoder_medium = function(inputs,
                           is_training=TRUE,
                           batch_norm=TRUE){
 
-    inputs = tf$cast(inputs, tf$float32)
-    net = tf$layers$dense(inputs=inputs,
+    inputs = tf$compat$v1$cast(inputs, tf$compat$v1$float32)
+    net = tf$compat$v1$layers$dense(inputs=inputs,
                           units=256,
-                          activation=tf$nn$relu,
-                          kernel_initializer=tf$contrib$layers$xavier_initializer(),
-                          kernel_regularizer=tf$contrib$layers$l2_regularizer(l2_weight),
+                          activation=tf$compat$v1$nn$relu,
+                          #kernel_initializer=tf$compat$v1$contrib$layers$xavier_initializer(),
+                          kernel_regularizer=tf$keras$regularizers$l2(l2_weight),
                           use_bias=TRUE,
                           name='fc1')
-    if(batch_norm == TRUE){net = tf$layers$batch_normalization(net, training=is_training, name='batch_norm_1')}
-    if(dropout == TRUE){net = tf$layers$dropout(inputs=net, rate=dropout_rate, training=is_training, name='drop1')}
-    net = tf$layers$dense(inputs=net,
+    if(batch_norm == TRUE){net = tf$compat$v1$layers$batch_normalization(net, training=is_training, name='batch_norm_1')}
+    if(dropout == TRUE){net = tf$compat$v1$layers$dropout(inputs=net, rate=dropout_rate, training=is_training, name='drop1')}
+    net = tf$compat$v1$layers$dense(inputs=net,
                           units=128,
-                          activation=tf$nn$relu,
-                          kernel_initializer=tf$contrib$layers$xavier_initializer(),
-                          kernel_regularizer=tf$contrib$layers$l2_regularizer(l2_weight),
+                          activation=tf$compat$v1$nn$relu,
+                          #kernel_initializer=tf$compat$v1$contrib$layers$xavier_initializer(),
+                          kernel_regularizer=tf$keras$regularizers$l2(l2_weight),
                           use_bias=TRUE,
                           name='fc2')
-    if(batch_norm == TRUE){net = tf$layers$batch_normalization(net, training=is_training, name='batch_norm_2')}
-    if(dropout == TRUE){net = tf$layers$dropout(inputs=net, rate=dropout_rate, training=is_training, name='drop2')}
-    emb = tf$layers$dense(inputs=net,
+    if(batch_norm == TRUE){net = tf$compat$v1$layers$batch_normalization(net, training=is_training, name='batch_norm_2')}
+    if(dropout == TRUE){net = tf$compat$v1$layers$dropout(inputs=net, rate=dropout_rate, training=is_training, name='drop2')}
+    emb = tf$compat$v1$layers$dense(inputs=net,
                           units=emb_size,
                           activation=NULL,
-                          kernel_initializer=tf$contrib$layers$xavier_initializer(),
-                          kernel_regularizer=tf$contrib$layers$l2_regularizer(l2_weight),
+                          #kernel_initializer=tf$compat$v1$contrib$layers$xavier_initializer(),
+                          kernel_regularizer=tf$keras$regularizers$l2(l2_weight),
                           use_bias=TRUE,
                           name='fc3')
     return(emb)
@@ -131,39 +131,39 @@ encoder_large = function(inputs,
                          is_training=TRUE,
                          batch_norm=TRUE){
 
-    inputs = tf$cast(inputs, tf$float32)
-    net = tf$layers$dense(inputs=inputs,
+    inputs = tf$compat$v1$cast(inputs, tf$compat$v1$float32)
+    net = tf$compat$v1$layers$dense(inputs=inputs,
                           units=512,
-                          activation=tf$nn$relu,
-                          kernel_initializer=tf$contrib$layers$xavier_initializer(),
-                          kernel_regularizer=tf$contrib$layers$l2_regularizer(l2_weight),
+                          activation=tf$compat$v1$nn$relu,
+                          #kernel_initializer=tf$compat$v1$contrib$layers$xavier_initializer(),
+                          kernel_regularizer=tf$keras$regularizers$l2(l2_weight),
                           use_bias=TRUE,
                           name='fc1')
-    if(batch_norm == TRUE){net = tf$layers$batch_normalization(net, training=is_training, name='batch_norm_1')}
-    if(dropout == TRUE){net = tf$layers$dropout(inputs=net, rate=dropout_rate, training=is_training, name='drop1')}
-    net = tf$layers$dense(inputs=net,
+    if(batch_norm == TRUE){net = tf$compat$v1$layers$batch_normalization(net, training=is_training, name='batch_norm_1')}
+    if(dropout == TRUE){net = tf$compat$v1$layers$dropout(inputs=net, rate=dropout_rate, training=is_training, name='drop1')}
+    net = tf$compat$v1$layers$dense(inputs=net,
                           units=256,
-                          activation=tf$nn$relu,
-                          kernel_initializer=tf$contrib$layers$xavier_initializer(),
-                          kernel_regularizer=tf$contrib$layers$l2_regularizer(l2_weight),
+                          activation=tf$compat$v1$nn$relu,
+                          #kernel_initializer=tf$compat$v1$contrib$layers$xavier_initializer(),
+                          kernel_regularizer=tf$keras$regularizers$l2(l2_weight),
                           use_bias=TRUE,
                           name='fc2')
-    if(batch_norm == TRUE){net = tf$layers$batch_normalization(net, training=is_training, name='batch_norm_2')}
-    if(dropout == TRUE){net = tf$layers$dropout(inputs=net, rate=dropout_rate, training=is_training, name='drop2')}
-    net = tf$layers$dense(inputs=net,
+    if(batch_norm == TRUE){net = tf$compat$v1$layers$batch_normalization(net, training=is_training, name='batch_norm_2')}
+    if(dropout == TRUE){net = tf$compat$v1$layers$dropout(inputs=net, rate=dropout_rate, training=is_training, name='drop2')}
+    net = tf$compat$v1$layers$dense(inputs=net,
                           units=128,
-                          activation=tf$nn$relu,
-                          kernel_initializer=tf$contrib$layers$xavier_initializer(),
-                          kernel_regularizer=tf$contrib$layers$l2_regularizer(l2_weight),
+                          activation=tf$compat$v1$nn$relu,
+                          #kernel_initializer=tf$compat$v1$contrib$layers$xavier_initializer(),
+                          kernel_regularizer=tf$keras$regularizers$l2(l2_weight),
                           use_bias=TRUE,
                           name='fc3')
-    if(batch_norm == TRUE){net = tf$layers$batch_normalization(net, training=is_training, name='batch_norm_3')}
-    if(dropout == TRUE){net = tf$layers$dropout(inputs=net, rate=dropout_rate, training=is_training, name='drop3')}
-    emb = tf$layers$dense(inputs=net,
+    if(batch_norm == TRUE){net = tf$compat$v1$layers$batch_normalization(net, training=is_training, name='batch_norm_3')}
+    if(dropout == TRUE){net = tf$compat$v1$layers$dropout(inputs=net, rate=dropout_rate, training=is_training, name='drop3')}
+    emb = tf$compat$v1$layers$dense(inputs=net,
                           units=emb_size,
                           activation=NULL,
-                          kernel_initializer=tf$contrib$layers$xavier_initializer(),
-                          kernel_regularizer=tf$contrib$layers$l2_regularizer(l2_weight),
+                          #kernel_initializer=tf$compat$v1$contrib$layers$xavier_initializer(),
+                          kernel_regularizer=tf$keras$regularizers$l2(l2_weight),
                           use_bias=TRUE,
                           name='fc4')
     return(emb)
@@ -198,20 +198,20 @@ decoder_small = function(inputs,
                          batch_norm=TRUE,
                          shared_ae=FALSE){
 
-    inputs = tf$cast(inputs, tf$float32)
-    net = tf$layers$dense(inputs=inputs,
+    inputs = tf$compat$v1$cast(inputs, tf$compat$v1$float32)
+    net = tf$compat$v1$layers$dense(inputs=inputs,
                           units=128,
-                          activation=tf$nn$relu,
-                          kernel_initializer=tf$contrib$layers$xavier_initializer(),
-                          kernel_regularizer=tf$contrib$layers$l2_regularizer(l2_weight),
+                          activation=tf$compat$v1$nn$relu,
+                          #kernel_initializer=tf$compat$v1$contrib$layers$xavier_initializer(),
+                          kernel_regularizer=tf$keras$regularizers$l2(l2_weight),
                           use_bias=TRUE,
                           name='fc1')
-    net = tf$layers$dropout(inputs=net, rate=dropout_rate, training=is_training, name='drop1')
-    proj = tf$layers$dense(inputs=net,
+    net = tf$compat$v1$layers$dropout(inputs=net, rate=dropout_rate, training=is_training, name='drop1')
+    proj = tf$compat$v1$layers$dense(inputs=net,
                            units=final_dim,
                            activation=NULL,
-                           kernel_initializer=tf$contrib$layers$xavier_initializer(),
-                           kernel_regularizer=tf$contrib$layers$l2_regularizer(l2_weight),
+                           #kernel_initializer=tf$compat$v1$contrib$layers$xavier_initializer(),
+                           kernel_regularizer=tf$keras$regularizers$l2(l2_weight),
                            use_bias=TRUE,
                            name='fc2')
     return(proj)
@@ -245,28 +245,28 @@ decoder_medium = function(inputs,
                           batch_norm=TRUE,
                           shared_ae=FALSE){
 
-    inputs = tf$cast(inputs, tf$float32)
-    net = tf$layers$dense(inputs=inputs,
+    inputs = tf$compat$v1$cast(inputs, tf$compat$v1$float32)
+    net = tf$compat$v1$layers$dense(inputs=inputs,
                           units=128,
-                          activation=tf$nn$relu,
-                          kernel_initializer=tf$contrib$layers$xavier_initializer(),
-                          kernel_regularizer=tf$contrib$layers$l2_regularizer(l2_weight),
+                          activation=tf$compat$v1$nn$relu,
+                          #kernel_initializer=tf$compat$v1$contrib$layers$xavier_initializer(),
+                          kernel_regularizer=tf$keras$regularizers$l2(l2_weight),
                           use_bias=TRUE,
                           name='fc1')
-    net = tf$layers$dropout(inputs=net, rate=dropout_rate, training=is_training, name='drop1')
-    net = tf$layers$dense(inputs=net,
+    net = tf$compat$v1$layers$dropout(inputs=net, rate=dropout_rate, training=is_training, name='drop1')
+    net = tf$compat$v1$layers$dense(inputs=net,
                           units=256,
-                          activation=tf$nn$relu,
-                          kernel_initializer=tf$contrib$layers$xavier_initializer(),
-                          kernel_regularizer=tf$contrib$layers$l2_regularizer(l2_weight),
+                          activation=tf$compat$v1$nn$relu,
+                          #kernel_initializer=tf$compat$v1$contrib$layers$xavier_initializer(),
+                          kernel_regularizer=tf$keras$regularizers$l2(l2_weight),
                           use_bias=TRUE,
                           name='fc2')
-    net = tf$layers$dropout(inputs=net, rate=dropout_rate, training=is_training, name='drop2')
-    proj = tf$layers$dense(inputs=net,
+    net = tf$compat$v1$layers$dropout(inputs=net, rate=dropout_rate, training=is_training, name='drop2')
+    proj = tf$compat$v1$layers$dense(inputs=net,
                            units=final_dim,
                            activation=NULL,
-                           kernel_initializer=tf$contrib$layers$xavier_initializer(),
-                           kernel_regularizer=tf$contrib$layers$l2_regularizer(l2_weight),
+                           #kernel_initializer=tf$compat$v1$contrib$layers$xavier_initializer(),
+                           kernel_regularizer=tf$keras$regularizers$l2(l2_weight),
                            use_bias=TRUE,
                            name='fc3')
     return(proj)
@@ -301,36 +301,36 @@ decoder_large = function(inputs,
                           batch_norm=TRUE,
                           shared_ae=FALSE){
 
-    inputs = tf$cast(inputs, tf$float32)
-    net = tf$layers$dense(inputs=inputs,
+    inputs = tf$compat$v1$cast(inputs, tf$compat$v1$float32)
+    net = tf$compat$v1$layers$dense(inputs=inputs,
                           units=128,
-                          activation=tf$nn$relu,
-                          kernel_initializer=tf$contrib$layers$xavier_initializer(),
-                          kernel_regularizer=tf$contrib$layers$l2_regularizer(l2_weight),
+                          activation=tf$compat$v1$nn$relu,
+                          #kernel_initializer=tf$compat$v1$contrib$layers$xavier_initializer(),
+                          kernel_regularizer=tf$keras$regularizers$l2(l2_weight),
                           use_bias=TRUE,
                           name='fc1')
-    net = tf$layers$dropout(inputs=net, rate=dropout_rate, training=is_training, name='drop1')
-    net = tf$layers$dense(inputs=net,
+    net = tf$compat$v1$layers$dropout(inputs=net, rate=dropout_rate, training=is_training, name='drop1')
+    net = tf$compat$v1$layers$dense(inputs=net,
                           units=256,
-                          activation=tf$nn$relu,
-                          kernel_initializer=tf$contrib$layers$xavier_initializer(),
-                          kernel_regularizer=tf$contrib$layers$l2_regularizer(l2_weight),
+                          activation=tf$compat$v1$nn$relu,
+                          #kernel_initializer=tf$compat$v1$contrib$layers$xavier_initializer(),
+                          kernel_regularizer=tf$keras$regularizers$l2(l2_weight),
                           use_bias=TRUE,
                           name='fc2')
-    net = tf$layers$dropout(inputs=net, rate=dropout_rate, training=is_training, name='drop2')
-    net = tf$layers$dense(inputs=net,
+    net = tf$compat$v1$layers$dropout(inputs=net, rate=dropout_rate, training=is_training, name='drop2')
+    net = tf$compat$v1$layers$dense(inputs=net,
                           units=512,
-                          activation=tf$nn$relu,
-                          kernel_initializer=tf$contrib$layers$xavier_initializer(),
-                          kernel_regularizer=tf$contrib$layers$l2_regularizer(l2_weight),
+                          activation=tf$compat$v1$nn$relu,
+                          #kernel_initializer=tf$compat$v1$contrib$layers$xavier_initializer(),
+                          kernel_regularizer=tf$keras$regularizers$l2(l2_weight),
                           use_bias=TRUE,
                           name='fc3')
-    net = tf$layers$dropout(inputs=net, rate=dropout_rate, training=is_training, name='drop3')
-    proj = tf$layers$dense(inputs=net,
+    net = tf$compat$v1$layers$dropout(inputs=net, rate=dropout_rate, training=is_training, name='drop3')
+    proj = tf$compat$v1$layers$dense(inputs=net,
                            units=final_dim,
                            activation=NULL,
-                           kernel_initializer=tf$contrib$layers$xavier_initializer(),
-                           kernel_regularizer=tf$contrib$layers$l2_regularizer(l2_weight),
+                           #kernel_initializer=tf$compat$v1$contrib$layers$xavier_initializer(),
+                           kernel_regularizer=tf$keras$regularizers$l2(l2_weight),
                            use_bias=TRUE,
                            name='fc4')
     return(proj)

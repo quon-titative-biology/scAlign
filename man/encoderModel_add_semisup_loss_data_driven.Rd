@@ -4,9 +4,19 @@
 \alias{encoderModel_add_semisup_loss_data_driven}
 \title{Add walker loss component}
 \usage{
-encoderModel_add_semisup_loss_data_driven(p_target, a, b, data_shape,
-  walker_weight = 1, visit_weight = 1, mode = "source",
-  comp = "exp", betas = NULL, diag = "zero", debug = TRUE)
+encoderModel_add_semisup_loss_data_driven(
+  p_target,
+  a,
+  b,
+  data_shape,
+  walker_weight = 1,
+  visit_weight = 1,
+  mode = "source",
+  comp = "exp",
+  betas = NULL,
+  diag = "zero",
+  debug = TRUE
+)
 }
 \arguments{
 \item{p_target}{Pairwise cell-cell similarity}

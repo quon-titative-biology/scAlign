@@ -21,41 +21,41 @@
 #'
 #' @keywords internal
 encoderModel_add_semisup_loss_data_driven = function(p_target, a, b, data_shape, walker_weight=1.0, visit_weight=1.0, mode='source', comp='exp', betas=NULL, diag="zero", debug=TRUE){
-  with(tf$name_scope(paste0('loss_walker_', mode)), {
+  with(tf$compat$v1$name_scope(paste0('loss_walker_', mode)), {
     ## Distance in embedding space
-    match_ab = tf$matmul(a, b, transpose_b=TRUE, name=paste0('match_ab_', mode))
-    p_ab = tf$nn$softmax(match_ab, name=paste0('p_ab_', mode))
-    p_ba = tf$nn$softmax(tf$transpose(match_ab), name=paste0('p_ba_', mode))
-    p_aba = tf$matmul(p_ab, p_ba, name=paste0('p_aba_', mode))
+    match_ab = tf$compat$v1$matmul(a, b, transpose_b=TRUE, name=paste0('match_ab_', mode))
+    p_ab = tf$compat$v1$nn$softmax(match_ab, name=paste0('p_ab_', mode))
+    p_ba = tf$compat$v1$nn$softmax(tf$compat$v1$transpose(match_ab), name=paste0('p_ba_', mode))
+    p_aba = tf$compat$v1$matmul(p_ab, p_ba, name=paste0('p_aba_', mode))
 
     ## Remove diagonal, interested in pairwise similarities not self.
     if(diag == "zero"){
-      p_aba = tf$matrix_set_diag(p_aba, tf$zeros(shape(data_shape)))
+      p_aba = tf$compat$v1$matrix_set_diag(p_aba, tf$compat$v1$zeros(shape(data_shape)))
     }
 
     ## Conditional probabilities.
-    loss_aba = tf$losses$softmax_cross_entropy(
+    loss_aba = tf$compat$v1$losses$softmax_cross_entropy(
         p_target,
-        tf$log(1e-20 + p_aba),
+        tf$compat$v1$log(1e-20 + p_aba),
         weights=walker_weight,
         scope=paste0('loss_aba_', mode))
 
     ## Histograms for tensorboard
-    tf$summary$histogram(paste0('p_ab_', mode), p_ab)
-    tf$summary$histogram(paste0('p_ba_', mode), p_ba)
-    tf$summary$histogram(paste0('p_aba_', mode), p_aba)
-    tf$summary$histogram('emb_a', a)
-    tf$summary$histogram('emb_b', b)
-    tf$summary$histogram('T_ij', p_target)
-    tf$summary$histogram('sum_p_ab', tf$reduce_sum(p_ab, as.integer(-1)))
-    tf$summary$histogram('sum_p_ba', tf$reduce_sum(p_ba, as.integer(-1)))
-    tf$summary$scalar('dot_min', tf$reduce_min(match_ab))
-    tf$summary$scalar('dot_max', tf$reduce_max(match_ab))
-    tf$summary$scalar('nnzero-emb_a', tf$count_nonzero(tf$cast(a, tf$float32)))
-    tf$summary$scalar('nnzero-emb_b', tf$count_nonzero(tf$cast(b, tf$float32)))
+    tf$compat$v1$summary$histogram(paste0('p_ab_', mode), p_ab)
+    tf$compat$v1$summary$histogram(paste0('p_ba_', mode), p_ba)
+    tf$compat$v1$summary$histogram(paste0('p_aba_', mode), p_aba)
+    tf$compat$v1$summary$histogram('emb_a', a)
+    tf$compat$v1$summary$histogram('emb_b', b)
+    tf$compat$v1$summary$histogram('T_ij', p_target)
+    tf$compat$v1$summary$histogram('sum_p_ab', tf$compat$v1$reduce_sum(p_ab, as.integer(-1)))
+    tf$compat$v1$summary$histogram('sum_p_ba', tf$compat$v1$reduce_sum(p_ba, as.integer(-1)))
+    tf$compat$v1$summary$scalar('dot_min', tf$compat$v1$reduce_min(match_ab))
+    tf$compat$v1$summary$scalar('dot_max', tf$compat$v1$reduce_max(match_ab))
+    tf$compat$v1$summary$scalar('nnzero-emb_a', tf$compat$v1$count_nonzero(tf$compat$v1$cast(a, tf$compat$v1$float32)))
+    tf$compat$v1$summary$scalar('nnzero-emb_b', tf$compat$v1$count_nonzero(tf$compat$v1$cast(b, tf$compat$v1$float32)))
 
     ## Record loss
-    tf$summary$scalar(paste0('Loss_aba_', mode), loss_aba)
+    tf$compat$v1$summary$scalar(paste0('Loss_aba_', mode), loss_aba)
   })
 }
 
@@ -74,20 +74,20 @@ encoderModel_add_semisup_loss_data_driven = function(p_target, a, b, data_shape,
 #'
 #' @keywords internal
 encoderModel_add_logit_loss = function(logits, labels, weight=1.0){
-   weights = tf$clip_by_value(tf$math$add(labels, tf$constant(as.integer(1), dtype=tf$int32)), as.integer(0), as.integer(1))
-   weight = tf$math$multiply(tf$cast(weights,dtype=tf$float32), weight)
-   tf$summary$histogram('weights_label', weight)
+   weights = tf$compat$v1$clip_by_value(tf$compat$v1$math$add(labels, tf$compat$v1$constant(as.integer(1), dtype=tf$compat$v1$int32)), as.integer(0), as.integer(1))
+   weight = tf$compat$v1$math$multiply(tf$compat$v1$cast(weights,dtype=tf$compat$v1$float32), weight)
+   tf$compat$v1$summary$histogram('weights_label', weight)
    ## Add clossifier
-   with(tf$name_scope('loss_classifier'), {
-       logit_loss = tf$losses$softmax_cross_entropy(
-           tf$one_hot(labels, logits$get_shape()[[length(logits$get_shape())]]),
+   with(tf$compat$v1$name_scope('loss_classifier'), {
+       logit_loss = tf$compat$v1$losses$softmax_cross_entropy(
+           tf$compat$v1$one_hot(labels, logits$get_shape()[-1]),
            logits,
            scope='loss_logit',
            weights=weight)
        # self.add_average(logit_loss)
-       tf$summary$scalar('Loss_Logit', logit_loss)
-       tf$summary$histogram('logits', logits)
-       logit_loss = tf$Print(logit_loss, list(logit_loss), message="class: ")
+       tf$compat$v1$summary$scalar('Loss_Logit', logit_loss)
+       tf$compat$v1$summary$histogram('logits', logits)
+       logit_loss = tf$compat$v1$Print(logit_loss, list(logit_loss), message="class: ")
    })
 }
 
@@ -109,108 +109,108 @@ encoderModel_add_logit_loss = function(logits, labels, weight=1.0){
 #'
 #' @keywords internal
 encoderModel_gaussian_kernel = function(data, data_b=NULL, dim, perplexity=30, method="euclidean", betas.fixed=0, diag="zero"){
-  with(tf$name_scope("gaussian_kernel"), {
+  with(tf$compat$v1$name_scope("gaussian_kernel"), {
     if(is.null(data_b)){data_b = data}
 
     ## Constants
-    PERPLEXITY_TOLERANCE = tf$constant(1e-5, dtype=tf$float64)
-    EPSILON_DBL = tf$constant(1e-8, dtype=tf$float64)
-    INFINITY    = tf$constant(1e10, dtype=tf$float64)
-    perplexity = tf$log(tf$constant(perplexity, dtype=tf$float64))
+    PERPLEXITY_TOLERANCE = tf$compat$v1$constant(1e-5, dtype=tf$compat$v1$float64)
+    EPSILON_DBL = tf$compat$v1$constant(1e-8, dtype=tf$compat$v1$float64)
+    INFINITY    = tf$compat$v1$constant(1e10, dtype=tf$compat$v1$float64)
+    perplexity = tf$compat$v1$log(tf$compat$v1$constant(perplexity, dtype=tf$compat$v1$float64))
 
     ## Variables used in binary search
-    betas      = tf$ones(shape(dim), dtype=tf$float64, name="betas")
-    p_ij       = tf$ones(shape(dim,dim), dtype=tf$float64, name="p_ij")
-    p_ij_unnorm = tf$ones(shape(dim,dim), dtype=tf$float64, name="p_ij_unnorm")
-    beta_min   = tf$fill(dims=shape(dim), value=tf$negative(INFINITY))
-    beta_max   = tf$fill(dims=shape(dim), value=INFINITY)
+    betas      = tf$compat$v1$ones(shape(dim), dtype=tf$compat$v1$float64, name="betas")
+    p_ij       = tf$compat$v1$ones(shape(dim,dim), dtype=tf$compat$v1$float64, name="p_ij")
+    p_ij_unnorm = tf$compat$v1$ones(shape(dim,dim), dtype=tf$compat$v1$float64, name="p_ij_unnorm")
+    beta_min   = tf$compat$v1$fill(dims=shape(dim), value=tf$compat$v1$negative(INFINITY))
+    beta_max   = tf$compat$v1$fill(dims=shape(dim), value=INFINITY)
 
     ## distances
     if(method == "euclidean"){
-      norm_a = tf$reshape(tf$reduce_sum(tf$square(data), as.integer(1)), shape(-1, 1))
-      norm_b = tf$reshape(tf$reduce_sum(tf$square(data_b), as.integer(1)), shape(1, -1))
-      affinities = norm_a - tf$constant(2, dtype=tf$float64)*tf$matmul(data, data_b, transpose_b=TRUE) + norm_b
+      norm_a = tf$compat$v1$reshape(tf$compat$v1$reduce_sum(tf$compat$v1$square(data), as.integer(1)), shape(-1, 1))
+      norm_b = tf$compat$v1$reshape(tf$compat$v1$reduce_sum(tf$compat$v1$square(data_b), as.integer(1)), shape(1, -1))
+      affinities = norm_a - tf$compat$v1$constant(2, dtype=tf$compat$v1$float64)*tf$compat$v1$matmul(data, data_b, transpose_b=TRUE) + norm_b
     }
 
     # if(betas.fixed!=0){
-    #   betas = tf$fill(dims=shape(dim), value=tf$cast(betas.fixed, tf$float64))
-    #   p_ij = tf$exp(tf$multiply(tf$negative(affinities), tf$reshape(betas, shape(-1,1))))
-    #   p_ij = tf$reshape(p_ij, shape(dim, dim)) ## tensorflow R requires this?
+    #   betas = tf$compat$v1$fill(dims=shape(dim), value=tf$compat$v1$cast(betas.fixed, tf$compat$v1$float64))
+    #   p_ij = tf$compat$v1$exp(tf$compat$v1$multiply(tf$compat$v1$negative(affinities), tf$compat$v1$reshape(betas, shape(-1,1))))
+    #   p_ij = tf$compat$v1$reshape(p_ij, shape(dim, dim)) ## tensorflow R requires this?
     #   ## Reset exp(0)'s to 0
     #   if(diag == "zero"){
-    #     p_ij = tf$matrix_set_diag(p_ij, tf$cast(tf$zeros(shape(dim)), tf$float64))
+    #     p_ij = tf$compat$v1$matrix_set_diag(p_ij, tf$compat$v1$cast(tf$compat$v1$zeros(shape(dim)), tf$compat$v1$float64))
     #   }
     #
-    #   sum_pij = tf$reduce_sum(p_ij, axis=as.integer(-1))
-    #   sum_pij = tf$where(tf$equal(sum_pij, tf$constant(0, dtype=tf$float64)), tf$fill(dims=shape(dim), value=EPSILON_DBL), sum_pij)
+    #   sum_pij = tf$compat$v1$reduce_sum(p_ij, axis=as.integer(-1))
+    #   sum_pij = tf$compat$v1$where(tf$compat$v1$equal(sum_pij, tf$compat$v1$constant(0, dtype=tf$compat$v1$float64)), tf$compat$v1$fill(dims=shape(dim), value=EPSILON_DBL), sum_pij)
     #
     #   p_ij_unnorm = p_ij
     #   ## Normalize
-    #   p_ij = tf$divide(p_ij, tf$reshape(sum_pij, shape(-1,1)))
+    #   p_ij = tf$compat$v1$divide(p_ij, tf$compat$v1$reshape(sum_pij, shape(-1,1)))
     #   return(p_ij)
     # }else{
 
       ## While loop conditional
       cond = function(step, affinities, perplexity, betas, beta_min, beta_max, p_ij, p_ij_unnorm){
-        return(tf$less_equal(step, tf$constant(100)))
+        return(tf$compat$v1$less_equal(step, tf$compat$v1$constant(100)))
       }
 
       ## While loop body
       body = function(step, affinities, perplexity, betas, beta_min, beta_max, p_ij, p_ij_unnorm){
-        step = tf$add(step, tf$constant(1))
+        step = tf$compat$v1$add(step, tf$compat$v1$constant(1))
         ## Compute probabilities
-        p_ij = tf$exp(tf$multiply(tf$negative(affinities), tf$reshape(betas, shape(-1,1))))
-        p_ij = tf$reshape(p_ij, shape(dim, dim)) ## tensorflow R requires this?
+        p_ij = tf$compat$v1$exp(tf$compat$v1$multiply(tf$compat$v1$negative(affinities), tf$compat$v1$reshape(betas, shape(-1,1))))
+        p_ij = tf$compat$v1$reshape(p_ij, shape(dim, dim)) ## tensorflow R requires this?
         ## Reset exp(0)'s to 0
         if(diag == "zero"){
-          p_ij = tf$matrix_set_diag(p_ij, tf$cast(tf$zeros(shape(dim)), tf$float64))
+          p_ij = tf$compat$v1$matrix_set_diag(p_ij, tf$compat$v1$cast(tf$compat$v1$zeros(shape(dim)), tf$compat$v1$float64))
         }
 
-        sum_pij = tf$reduce_sum(p_ij, axis=as.integer(-1))
-        sum_pij = tf$where(tf$equal(sum_pij, tf$constant(0, dtype=tf$float64)), tf$fill(dims=shape(dim), value=EPSILON_DBL), sum_pij)
+        sum_pij = tf$compat$v1$reduce_sum(p_ij, axis=as.integer(-1))
+        sum_pij = tf$compat$v1$where(tf$compat$v1$equal(sum_pij, tf$compat$v1$constant(0, dtype=tf$compat$v1$float64)), tf$compat$v1$fill(dims=shape(dim), value=EPSILON_DBL), sum_pij)
 
         p_ij_unnorm = p_ij
         ## Normalize
-        p_ij = tf$divide(p_ij, tf$reshape(sum_pij, shape(-1,1)))
+        p_ij = tf$compat$v1$divide(p_ij, tf$compat$v1$reshape(sum_pij, shape(-1,1)))
 
         ## Precision based method
-        sum_disti_pij = tf$reduce_sum(tf$multiply(affinities, p_ij), axis=as.integer(-1))
+        sum_disti_pij = tf$compat$v1$reduce_sum(tf$compat$v1$multiply(affinities, p_ij), axis=as.integer(-1))
 
         ## Compute entropy
-        entropy = tf$add(tf$log(sum_pij), tf$multiply(betas, sum_disti_pij))
-        entropy_diff = tf$subtract(entropy, perplexity)
+        entropy = tf$compat$v1$add(tf$compat$v1$log(sum_pij), tf$compat$v1$multiply(betas, sum_disti_pij))
+        entropy_diff = tf$compat$v1$subtract(entropy, perplexity)
 
         ## Logic for binary search: Lines 98-109 in tsne_util.pyx.
         ## Set beta_min
-        beta_min = tf$where(tf$logical_and(tf$greater(entropy_diff, tf$constant(0.0, dtype=tf$float64)),
-                                           tf$greater(tf$abs(entropy_diff), PERPLEXITY_TOLERANCE)),
+        beta_min = tf$compat$v1$where(tf$compat$v1$logical_and(tf$compat$v1$greater(entropy_diff, tf$compat$v1$constant(0.0, dtype=tf$compat$v1$float64)),
+                                           tf$compat$v1$greater(tf$compat$v1$abs(entropy_diff), PERPLEXITY_TOLERANCE)),
                                            betas, beta_min)
 
         ## Set betas for which entropy_diff > 0.0
         ## Where = (cond, x, y): returns elements of x for which cond is true and y elements for which cond is False.
-        betas = tf$where(tf$logical_and(tf$greater(entropy_diff, tf$constant(0.0, dtype=tf$float64)),
-                                        tf$greater(tf$abs(entropy_diff), PERPLEXITY_TOLERANCE)),
-                                        tf$where(tf$equal(beta_max, INFINITY), tf$multiply(betas,2.0), tf$divide(tf$add(betas, beta_max), 2.0)), betas)
+        betas = tf$compat$v1$where(tf$compat$v1$logical_and(tf$compat$v1$greater(entropy_diff, tf$compat$v1$constant(0.0, dtype=tf$compat$v1$float64)),
+                                        tf$compat$v1$greater(tf$compat$v1$abs(entropy_diff), PERPLEXITY_TOLERANCE)),
+                                        tf$compat$v1$where(tf$compat$v1$equal(beta_max, INFINITY), tf$compat$v1$multiply(betas,2.0), tf$compat$v1$divide(tf$compat$v1$add(betas, beta_max), 2.0)), betas)
 
         ## Set beta_max
-        beta_max = tf$where(tf$logical_and(tf$less_equal(entropy_diff, tf$constant(0.0, dtype=tf$float64)),
-                                           tf$greater(tf$abs(entropy_diff), PERPLEXITY_TOLERANCE)),
+        beta_max = tf$compat$v1$where(tf$compat$v1$logical_and(tf$compat$v1$less_equal(entropy_diff, tf$compat$v1$constant(0.0, dtype=tf$compat$v1$float64)),
+                                           tf$compat$v1$greater(tf$compat$v1$abs(entropy_diff), PERPLEXITY_TOLERANCE)),
                                            betas, beta_max)
 
         ##Set betas for which entropy_diff <= 0.0
-        betas = tf$where(tf$logical_and(tf$less_equal(entropy_diff, tf$constant(0.0, dtype=tf$float64)),
-                                        tf$greater(tf$abs(entropy_diff), PERPLEXITY_TOLERANCE)),
-                                        tf$where(tf$equal(beta_min, tf$negative(INFINITY)), tf$divide(betas,2.0), tf$divide(tf$add(betas, beta_min), 2.0)), betas)
+        betas = tf$compat$v1$where(tf$compat$v1$logical_and(tf$compat$v1$less_equal(entropy_diff, tf$compat$v1$constant(0.0, dtype=tf$compat$v1$float64)),
+                                        tf$compat$v1$greater(tf$compat$v1$abs(entropy_diff), PERPLEXITY_TOLERANCE)),
+                                        tf$compat$v1$where(tf$compat$v1$equal(beta_min, tf$compat$v1$negative(INFINITY)), tf$compat$v1$divide(betas,2.0), tf$compat$v1$divide(tf$compat$v1$add(betas, beta_min), 2.0)), betas)
 
         ## Control dependencies before looping can continue
-        with(tf$control_dependencies(list(step, affinities, perplexity, betas, beta_min)), {
+        with(tf$compat$v1$control_dependencies(list(step, affinities, perplexity, betas, beta_min)), {
           return(list(step, affinities, perplexity, betas, beta_min, beta_max, p_ij, p_ij_unnorm))
         })
       }
 
       ## Run binary search for bandwidth (precision)
-      step = tf$constant(0)
-      loop = tf$while_loop(cond, body, list(step, affinities, perplexity, betas, beta_min, beta_max, p_ij, p_ij_unnorm), back_prop=FALSE)
+      step = tf$compat$v1$constant(0)
+      loop = tf$compat$v1$while_loop(cond, body, list(step, affinities, perplexity, betas, beta_min, beta_max, p_ij, p_ij_unnorm), back_prop=FALSE)
       return(loop[[7]])
     # }
   })
@@ -231,8 +231,8 @@ encoderModel_gaussian_kernel = function(data, data_b=NULL, dim, perplexity=30, m
 #' @keywords internal
 encoderModel_data_to_embedding = function(model_func, data, is_training=TRUE, scope=''){
   ## Create a graph, transforming data into embeddings
-  with(tf$name_scope(paste0('data_to_emb_net', scope)), {
-    with(tf$variable_scope('net', reuse=is_training), {
+  with(tf$compat$v1$name_scope(paste0('data_to_emb_net', scope)), {
+    with(tf$compat$v1$variable_scope('net', reuse=is_training), {
       return(model_func(data, is_training=is_training))
     })
   })
@@ -251,12 +251,12 @@ encoderModel_data_to_embedding = function(model_func, data, is_training=TRUE, sc
 #' @keywords internal
 encoderModel_embedding_to_logit = function(data, num_labels, is_training=TRUE){
   ## Add to computation graph, transform embeddings into logit scores
-  with(tf$name_scope('emb_to_logit_net'), {
-    with(tf$variable_scope('net', reuse=is_training), {
-      return(tf$layers$dense(inputs=data,
+  with(tf$compat$v1$name_scope('emb_to_logit_net'), {
+    with(tf$compat$v1$variable_scope('net', reuse=is_training), {
+      return(tf$compat$v1$layers$dense(inputs=data,
                              units=num_labels,
                              activation=NULL,
-                             kernel_regularizer=tf$contrib$layers$l2_regularizer(1e-4),
+                             kernel_regularizer=tf$keras$regularizers$l2(1e-4),
                              use_bias=TRUE,
                              name='logit_fc'))
     })
@@ -283,11 +283,7 @@ encoderModel_calc_embedding = function(sess, data, endpoint, test_in, FLAGS, bat
   emb = matrix(nrow=nrow(data), ncol=FLAGS$emb_size, 0)
   for(i in seq(1,nrow(data),batch_size)){
     ix_end = min((i+(batch_size-1)), nrow(data))
-    batch = data[i:ix_end,,drop=FALSE]
-    if(FLAGS$norm == TRUE){
-      batch = sess$run(tf$nn$l2_normalize(batch, axis=as.integer(1), name=paste0("mini_batch_l2_emb")))
-    }
-    emb[i:ix_end,] = sess$run(endpoint, dict(test_in=batch))
+    emb[i:ix_end,] = sess$run(endpoint, dict(test_in=data[i:ix_end,,drop=FALSE]))
   }
   return(emb)
 }
@@ -331,12 +327,12 @@ encoderModel_calc_logit = function(sess, emb, endpoint, test_logit_in, FLAGS){
 #' @keywords internal
 encoderModel_create_train_op = function(learning_rate, step){
   ## Collect all loss components
-  train_loss    = tf$losses$get_total_loss()
+  train_loss    = tf$compat$v1$losses$get_total_loss()
   ## Minimize loss function
-  optimizer = tf$train$AdamOptimizer(learning_rate)
+  optimizer = tf$compat$v1$train$AdamOptimizer(learning_rate)
   train_op = optimizer$minimize(train_loss, step)
   ## Monitor
-  tf$summary$scalar('Learning_Rate', learning_rate)
-  tf$summary$scalar('Loss_Total', train_loss)
+  tf$compat$v1$summary$scalar('Learning_Rate', learning_rate)
+  tf$compat$v1$summary$scalar('Loss_Total', train_loss)
   return(train_op)
 }

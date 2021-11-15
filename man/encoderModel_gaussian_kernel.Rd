@@ -4,8 +4,15 @@
 \alias{encoderModel_gaussian_kernel}
 \title{Guassian kernel}
 \usage{
-encoderModel_gaussian_kernel(data, data_b = NULL, dim, perplexity = 30,
-  method = "euclidean", betas.fixed = 0, diag = "zero")
+encoderModel_gaussian_kernel(
+  data,
+  data_b = NULL,
+  dim,
+  perplexity = 30,
+  method = "euclidean",
+  betas.fixed = 0,
+  diag = "zero"
+)
 }
 \arguments{
 \item{data}{cell x feature data matrix}

@@ -4,8 +4,14 @@
 \alias{compute_kernel_matrix}
 \title{Computes kernel matrix}
 \usage{
-compute_kernel_matrix(data, data_shape, labels = NULL, method = NULL,
-  perplexity = 30, diag = "zero")
+compute_kernel_matrix(
+  data,
+  data_shape,
+  labels = NULL,
+  method = NULL,
+  perplexity = 30,
+  diag = "zero"
+)
 }
 \arguments{
 \item{data}{cell x feature data matrix}

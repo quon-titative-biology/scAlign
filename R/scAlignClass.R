@@ -66,18 +66,12 @@ scAlignCreateObject = function(sce.objects,
 
   ## Grab version of scAlign being run
   version = packageVersion("scAlign")
-  
-  ## Ensure all objects are SCE or converted to SCE 
-  if(all(vapply(sce.objects, class, character(1)) == "Seurat") == TRUE){
-    if(is.null(genes.use)){
-      sce.objects <- as.SingleCellExperimentList(sce.objects)
-    }else{
-      sce.objects <- as.SingleCellExperimentList(sce.objects, genes.use)
-    }
-  }else if(all(vapply(sce.objects, class, character(1)) == "SingleCellExperiment") == FALSE){
-    stop("Unsupported or inconsistent input type(s): Must be Seurat or SingleCellExperiment objects")
+
+  ## Ensure all objects are SCE
+  if(all(vapply(sce.objects, class, character(1)) == "SingleCellExperiment") == FALSE){
+    stop("Unsupported or inconsistent input type(s): Must be SingleCellExperiment objects")
   }
-  
+
   ## Ensure data list has names
   if(is.null(names(sce.objects))){ names(sce.objects) = paste0("dataset", seq_len(length(sce.objects))) }
   if(!is.list(labels)) { stop("labels must be a list.") }
@@ -158,8 +152,7 @@ scAlignCreateObject = function(sce.objects,
       combined = RunCCA(seurat.objects[[names(sce.objects)[1]]],
                         seurat.objects[[names(sce.objects)[2]]],
                         features=genes.use,
-                        num.cc=ccs.compute,
-                        scale.data=TRUE)
+                        num.cc=ccs.compute)
       ## Load dim reduction into SCE object
       reducedDim(combined.sce, "CCA") =  Embeddings(combined, reduction = "cca")
       metadata(combined.sce)[["CCA.output"]] = Loadings(combined, reduction = "cca")
@@ -168,8 +161,7 @@ scAlignCreateObject = function(sce.objects,
       combined = RunCCA(seurat.objects[[names(sce.objects)[1]]],
                         seurat.objects[[names(sce.objects)[2]]],
                         genes.use=genes.use,
-                        num.cc=ccs.compute,
-                        scale.data=TRUE)
+                        num.cc=ccs.compute)
       ## Load dim reduction into SCE object
       reducedDim(combined.sce, "CCA") = GetCellEmbeddings(combined, "cca")
       metadata(combined.sce)[["CCA.output"]] = GetGeneLoadings(combined, reduction.type = "cca")
@@ -191,6 +183,7 @@ scAlignCreateObject = function(sce.objects,
 #' @return Options data.frame
 #'
 #' @param steps (default: 15000) Number of training iterations for neural networks.
+#' @param steps.decoder Number of training iterations for neural networks.
 #' @param batch.size (default: 150) Number of input samples per training batch.
 #' @param learning.rate (default: 1e-4) Initial learning rate for ADAM.
 #' @param log.every (default: 5000) Number of steps before saving results.

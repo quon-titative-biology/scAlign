@@ -4,8 +4,14 @@
 \alias{.early_stop}
 \title{Perform early stopping}
 \usage{
-.early_stop(loss_tracker, step, patience_count, early_stopping_active,
-  patience = 30, min_delta = 0.01)
+.early_stop(
+  loss_tracker,
+  step,
+  patience_count,
+  early_stopping_active,
+  patience = 30,
+  min_delta = 0.01
+)
 }
 \value{
 Earlying stopping flag

@@ -4,7 +4,11 @@
 \alias{.plotTSNE}
 \title{Creates tsne plot}
 \usage{
-.plotTSNE(data, labels, file_out = "~/scAlign_default_plot.png")
+.plotTSNE(
+  data,
+  labels,
+  file_out = file.path(tempdir(), "/scAlign_default_plot.png")
+)
 }
 \arguments{
 \item{data}{Current aligned embeddings}

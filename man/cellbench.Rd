@@ -4,7 +4,9 @@
 \name{cellbench}
 \alias{cellbench}
 \title{CellBench data for benchmarking}
-\format{An matrix object.}
+\format{
+An matrix object.
+}
 \source{
 \href{https://github.com/LuyiTian/CellBench_data/tree/master/data}{CellBench}
 }

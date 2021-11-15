@@ -1,9 +1,9 @@
 Package: scAlign
-Version: 1.1.6
+Version: 1.8.0
 Date: 2019-02-11
 Title: An alignment and integration method for single cell genomics
 Description: An unsupervised deep learning method for data alignment, integration and estimation of per-cell differences in -omic data (e.g. gene expression) across datasets (conditions, tissues, species). See Johansen and Quon (2019) <doi:10.1101/504944> for more details.
-Authors@R:
+Authors@R: 
    c(person(given = "Nelson",
             family = "Johansen",
             role = c("aut", "cre"),
@@ -16,22 +16,22 @@ URL: https://github.com/quon-titative-biology/scAlign
 BugReports: https://github.com/quon-titative-biology/scAlign/issues
 biocViews: SingleCell, Transcriptomics, DimensionReduction,
         NeuralNetwork
-Depends: R (>= 3.5), SingleCellExperiment (>= 1.4), Seurat (>= 2.3.4), tensorflow,
-         purrr, irlba, Rtsne, ggplot2, methods, utils, FNN
+Depends: R (>= 3.6), SingleCellExperiment (>= 1.4), Seurat (>= 2.3.4),
+        tensorflow, purrr, irlba, Rtsne, ggplot2, methods, utils, FNN
 Suggests: knitr, rmarkdown, testthat
 VignetteBuilder: knitr
 SystemRequirements: python (< 3.7), tensorflow
-RoxygenNote: 6.1.1
+RoxygenNote: 7.1.0
 License: GPL-3
 LazyData: false
 Encoding: UTF-8
-git_url: https://git.bioconductor.org/packages/scAlign
-git_branch: master
-git_last_commit: cf44fb3
-git_last_commit_date: 2019-05-02
-Date/Publication: 2019-05-02
 NeedsCompilation: no
-Packaged: 2019-05-03 03:13:41 UTC; biocbuild
+Packaged: 2021-10-26 22:41:14 UTC; biocbuild
+git_url: https://git.bioconductor.org/packages/scAlign
+git_branch: RELEASE_3_14
+git_last_commit: 9693380
+git_last_commit_date: 2021-10-26
+Date/Publication: 2021-10-26
 Author: Nelson Johansen [aut, cre],
   Gerald Quon [aut]
 Maintainer: Nelson Johansen <njjohansen@ucdavis.edu>

@@ -124,7 +124,7 @@ encoderModel_train_encoder = function(FLAGS, CV, config,
                                                      mode='source',
                                                      comp=FLAGS$prob_comp,
                                                      debug=FLAGS$verbose)
-      }else{print("SOURCE STRUCUTRE NOT ENFORCED")}
+      }else{print("SOURCE STRUCTURE NOT ENFORCED")}
 
       ## Add target assoc loss
       if(FLAGS$target_walker_weight != 0.0){
@@ -138,7 +138,7 @@ encoderModel_train_encoder = function(FLAGS, CV, config,
                                                      mode='target',
                                                      comp=FLAGS$prob_comp,
                                                      debug=FLAGS$verbose)
-      }else{print("TARGET STRUCUTRE NOT ENFORCED")}
+      }else{print("TARGET STRUCTURE NOT ENFORCED")}
 
       ## Add classificaiton loss
       if(FLAGS$supervised != 'none'){

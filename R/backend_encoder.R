@@ -28,8 +28,6 @@ encoderModel_add_semisup_loss_data_driven = function(p_target, a, b, data_shape,
     p_ba = tf$compat$v1$nn$softmax(tf$compat$v1$transpose(match_ab), name=paste0('p_ba_', mode))
     p_aba = tf$compat$v1$matmul(p_ab, p_ba, name=paste0('p_aba_', mode))
 
-    print(data_shape)
-
     ## Remove diagonal, interested in pairwise similarities not self.
     if(diag == "zero"){
       p_aba = tf$compat$v1$matrix_set_diag(p_aba, tf$compat$v1$zeros(shape(data_shape)))
@@ -81,8 +79,11 @@ encoderModel_add_logit_loss = function(logits, labels, weight=1.0){
    tf$compat$v1$summary$histogram('weights_label', weight)
    ## Add clossifier
    with(tf$compat$v1$name_scope('loss_classifier'), {
+       print(logits)
+       print(tf$shape(logits))
+       print(logits$get_shape())
        logit_loss = tf$compat$v1$losses$softmax_cross_entropy(
-           tf$compat$v1$one_hot(labels, logits$get_shape()[-1]),
+           tf$compat$v1$one_hot(labels, logits$get_shape()[-1]$as_list()),
            logits,
            scope='loss_logit',
            weights=weight)

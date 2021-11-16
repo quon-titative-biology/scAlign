@@ -13,9 +13,9 @@ First follow the install instructions below, at the bottom of the page, before f
 
 ## Contributors
 
-[Chang Kim](https://github.com/cnk113) | 
------------- |
-<img src="https://avatars1.githubusercontent.com/u/21249710?v=4&s=25" width="150" height="150" /> | 
+[Chang Kim](https://github.com/cnk113) | [Tyler Brassel](https://github.com/tbrassel) |
+------------ | ------------ |
+<img src="https://avatars1.githubusercontent.com/u/21249710?v=4&s=25" width="150" height="150" /> | <img src="https://avatars3.githubusercontent.com/u/37461300?s=460&v=4" width="150" height="150" /> | 
 
 
 ## Updates
@@ -24,13 +24,13 @@ First follow the install instructions below, at the bottom of the page, before f
 
 #### (9/4/2019) Updated install instructions to include Tensorflow for R method.
 
-#### (5/9/2019) Updated to version 1.0! Tutorials for multiple modes of operation now available. 
+#### (5/9/2019) Updated to version 1.0! Tutorials for multiple modes of operation now available.
 
 ## R Package and Bioconductor
 
-Bioconductor for now will only support the Linux version of scAlign. 
+Bioconductor for now will only support the Linux version of scAlign.
 
-The latest version of scAlign for all systems can always be found at [github](https://github.com/quon-titative-biology/). 
+The latest version of scAlign for all systems can always be found at [github](https://github.com/quon-titative-biology/).
 
 ```
 install.packages('devtools')
@@ -40,7 +40,7 @@ library(scAlign)
 
 ## Package requirements
 
-scAlign has three dependencies: Python 3, tensorflow (the R package), and tensorflow (the Python package). This is a guide to installing python and Tensorflow on different operating systems. 
+scAlign has three dependencies: Python 3, tensorflow (the R package), and tensorflow (the Python package). This is a guide to installing python and Tensorflow on different operating systems.
 
 ### (Python)
   #### All platforms:
@@ -58,7 +58,7 @@ scAlign has three dependencies: Python 3, tensorflow (the R package), and tensor
   2. export PATH="/usr/local/bin:/usr/local/sbin:$PATH"
   3. brew update
   4. brew install python  # Python 3
-  
+
 ### (Tensorflow)
 In an R session:
   ```

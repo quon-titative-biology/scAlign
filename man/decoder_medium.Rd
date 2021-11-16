@@ -4,17 +4,9 @@
 \alias{decoder_medium}
 \title{Network medium}
 \usage{
-decoder_medium(
-  inputs,
-  final_dim,
-  emb_size = 32,
-  l2_weight = 1e-08,
-  dropout = TRUE,
-  dropout_rate = 0.3,
-  is_training = TRUE,
-  batch_norm = TRUE,
-  shared_ae = FALSE
-)
+decoder_medium(inputs, final_dim, emb_size = 32, l2_weight = 1e-08,
+  dropout = TRUE, dropout_rate = 0.3, is_training = TRUE,
+  batch_norm = TRUE, shared_ae = FALSE)
 }
 \arguments{
 \item{inputs}{Mini-batch placeholder}

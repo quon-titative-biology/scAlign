@@ -4,18 +4,10 @@
 \alias{scAlign}
 \title{Run scAlign framework}
 \usage{
-scAlign(
-  sce.object,
-  options = scAlignOptions(),
-  encoder.data,
-  decoder.data = encoder.data,
-  supervised = "none",
-  run.encoder = TRUE,
-  run.decoder = FALSE,
-  log.dir = "./models/",
-  log.results = FALSE,
-  device = "CPU"
-)
+scAlign(sce.object, options = scAlignOptions(), encoder.data,
+  decoder.data = encoder.data, supervised = "none",
+  run.encoder = TRUE, run.decoder = FALSE, log.dir = "./models/",
+  log.results = FALSE, device = "CPU")
 }
 \arguments{
 \item{sce.object}{scAlign object.}
@@ -82,7 +74,7 @@ scAlignHSC = scAlign(scAlignHSC,
                    supervised='none',
                    run.encoder=TRUE,
                    run.decoder=FALSE,
-                   log.dir=file.path(tempdir(),'gene_input'),
+                   log.dir=file.path('~/models','gene_input'),
                    device="CPU")
 
 }

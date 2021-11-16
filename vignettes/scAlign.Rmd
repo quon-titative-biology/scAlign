@@ -32,7 +32,7 @@ install.packages('devtools')
 devtools::install_github(repo = 'quon-titative-biology/scAlign')
 library(scAlign)
 
-## Install Tensorflow
+## Install Tensorflow 
 library(tensorflow)
 install_tensorflow(version = "gpu") ## Removing version will install CPU version of Tensorflow
 ```
@@ -122,7 +122,7 @@ scAlignCB = scAlign(scAlignCB,
                     supervised='none',
                     run.encoder=TRUE,
                     run.decoder=FALSE,
-                    log.dir=file.path(tempdir(),'gene_input'),
+                    log.dir=file.path('~/models_temp','gene_input'),
                     device="CPU")
 
 # ## Additional run of scAlign with CCA
@@ -135,7 +135,7 @@ scAlignCB = scAlign(scAlignCB,
 #                     supervised='none',
 #                     run.encoder=TRUE,
 #                     run.decoder=FALSE,
-#                     log.dir=file.path(tempdir(),'cca_input'),
+#                     log.dir=file.path('~/models','cca_input'),
 #                     device="CPU")
 
 ## Plot aligned data in tSNE space, when the data was processed in three different ways:

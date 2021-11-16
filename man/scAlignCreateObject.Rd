@@ -4,18 +4,10 @@
 \alias{scAlignCreateObject}
 \title{Creates scAlign object}
 \usage{
-scAlignCreateObject(
-  sce.objects,
-  genes.use = NULL,
-  labels = list(),
-  pca.reduce = FALSE,
-  pcs.compute = 20,
-  cca.reduce = FALSE,
-  ccs.compute = 15,
-  cca.standardize = TRUE,
-  data.use = "scale.data",
-  project.name = "scAlignProject"
-)
+scAlignCreateObject(sce.objects, genes.use = NULL, labels = list(),
+  pca.reduce = FALSE, pcs.compute = 20, cca.reduce = FALSE,
+  ccs.compute = 15, data.use = "scale.data",
+  project.name = "scAlignProject")
 }
 \arguments{
 \item{sce.objects}{List of Seurat or Matrix objects; sample x feature.}
@@ -31,8 +23,6 @@ scAlignCreateObject(
 \item{cca.reduce}{Initial step of dimensionality be performced by CCA.}
 
 \item{ccs.compute}{Number of CCs to retrain for alignment.}
-
-\item{cca.standardize}{Standardize the data matrices before CCA.}
 
 \item{data.use}{Specificies which data to use from a Seurat object for dimensionality reduction.}
 

@@ -4,17 +4,8 @@
 \alias{PlotTSNE}
 \title{Creates tsne plot}
 \usage{
-PlotTSNE(
-  object,
-  data.use,
-  labels.use = "scAlign.labels",
-  cols = NULL,
-  title = "",
-  legend = "none",
-  point.size = 3,
-  seed = 1234,
-  ...
-)
+PlotTSNE(object, data.use, labels.use = "scAlign.labels", cols = NULL,
+  title = "", legend = "none", seed = 1234, ...)
 }
 \arguments{
 \item{object}{scAlign class object with aligned data}
@@ -28,8 +19,6 @@ PlotTSNE(
 \item{title}{ggplot title}
 
 \item{legend}{Determines if legend should be drawn}
-
-\item{point.size}{Size of geom_point}
 
 \item{seed}{Random seed for reproducability}
 
@@ -85,7 +74,7 @@ Helper function to plot aligned data from the results of running scAlign().
                     run.encoder=TRUE,
                     run.decoder=FALSE,
                     log.results=FALSE,
-                    log.dir=file.path(tempdir(),'gene_input'),
+                    log.dir=file.path('~/models','gene_input'),
                     device="CPU")
 
  ## Plot alignment for 3 input types

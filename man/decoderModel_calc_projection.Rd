@@ -4,15 +4,8 @@
 \alias{decoderModel_calc_projection}
 \title{Compute projections for complete data after training}
 \usage{
-decoderModel_calc_projection(
-  sess,
-  data,
-  data_full,
-  endpoint,
-  test_in,
-  FLAGS,
-  batch_size = 150
-)
+decoderModel_calc_projection(sess, data, data_full, endpoint, test_in,
+  FLAGS, batch_size = 150)
 }
 \arguments{
 \item{sess}{Current tensorflow session}

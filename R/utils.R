@@ -60,7 +60,7 @@
 #'                     run.encoder=TRUE,
 #'                     run.decoder=FALSE,
 #'                     log.results=FALSE,
-#'                     log.dir=file.path(tempdir(),'gene_input'),
+#'                     log.dir=file.path('~/models','gene_input'),
 #'                     device="CPU")
 #'
 #'  ## Plot alignment for 3 input types
@@ -74,9 +74,9 @@
 PlotTSNE = function(object, data.use, labels.use="scAlign.labels", cols=NULL, title="", legend="none", point.size=3, seed=1234, ...){
     x=y=NULL ## Appease R checker, doesn't like ggplot2 aes() variables
     tryCatch({
-      if(data.use %in% names(assays(scAlignHSC))){
+      if(data.use %in% names(assays(object))){
         res = Rtsne(assay(object, data.use), ...)
-      }else if(data.use %in% names(reducedDims(scAlignHSC))){
+      }else if(data.use %in% names(reducedDims(object))){
         res = Rtsne(reducedDim(object, data.use), ...)
       }else{
         print("Data type not defined in assays or reducedDims")
@@ -142,18 +142,18 @@ PlotTSNE = function(object, data.use, labels.use="scAlign.labels", cols=NULL, ti
 #' @export
 gaussianKernel = function(data, data_shape, labels=NULL, method=NULL, perplexity=30, diag="zero"){
   ## Hardware configurations for GPU if enabled
-  config = tf$compat$v1$ConfigProto(gpu_options = tf$compat$v1$GPUOptions(allow_growth=TRUE),
+  config = tf$ConfigProto(gpu_options = tf$GPUOptions(allow_growth=TRUE),
                           allow_soft_placement=TRUE,
                           log_device_placement=FALSE,
                           device_count = dict('GPU', 1))
   sess = NULL ## Appease R check
-  with(tf$compat$v1$Session(config=config) %as% sess, {
-    data=tf$compat$v1$cast(data, tf$compat$v1$float64)
-    data = tf$compat$v1$nn$l2_normalize(data, axis=as.integer(1))
+  with(tf$Session(config=config) %as% sess, {
+    data=tf$cast(data, tf$float64)
+    data = tf$nn$l2_normalize(data, axis=as.integer(1))
     ## Defines the similarity matrix T used for asssociation loss
     kernel = encoderModel_gaussian_kernel(data, dim=data_shape, perplexity=perplexity, diag=diag)
     ## Cast down for consistent data type
-    return(sess$run(tf$compat$v1$cast(kernel, tf$compat$v1$float32)))
+    return(sess$run(tf$cast(kernel, tf$float32)))
   })
 }
 
@@ -176,7 +176,7 @@ gaussianKernel = function(data, data_shape, labels=NULL, method=NULL, perplexity
 #' @import ggplot2
 #'
 #' @keywords internal
-.plotTSNE = function(data, labels, file_out=file.path(tempdir(), "/scAlign_default_plot.png")){
+.plotTSNE = function(data, labels, file_out="~/scAlign_default_plot.png"){
     x=y=NULL ## Appease R checker, doesn't like ggplot2 aes() variables
     res = Rtsne(data, PCA=FALSE, verbose=FALSE)
     plot.me <- data.frame(x=res$Y[,1], y=res$Y[,2], labels=labels, stringsAsFactors=FALSE)
@@ -303,9 +303,8 @@ alignment_score <- function(data, source_labels, target_labels, nn=0){
 .check_tensorflow = function(){
   sess = NULL ## Appease R check
   tryCatch({
-    message(paste0("Found tf version: ", tf$version$VERSION))
-    with(tf$compat$v1$Session() %as% sess, {
-      sess$run(tf$compat$v1$Print("", list("Passed"), "TensorFlow check: "))
+    with(tf$Session() %as% sess, {
+      sess$run(tf$Print("", list("Passed"), "TensorFlow check: "))
     })
   }, error=function(e) {
       stop("Error with system install of tensorflow, check R for Tensorflow docs.")
@@ -339,8 +338,8 @@ alignment_score <- function(data, source_labels, target_labels, nn=0){
 #'
 #' @keywords internal
 .learning_rate = function(step, decay_step, FLAGS){
-    return(tf$compat$v1$maximum(
-            tf$compat$v1$train$exponential_decay(
+    return(tf$maximum(
+            tf$train$exponential_decay(
                FLAGS$learning_rate,
                step,
                decay_step,

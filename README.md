@@ -13,14 +13,11 @@ First follow the install instructions below, at the bottom of the page, before f
 
 ## Contributors
 
-[Chang Kim](https://github.com/cnk113) | 
------------- |
-<img src="https://avatars1.githubusercontent.com/u/21249710?v=4&s=25" width="150" height="150" /> | 
-
+[Chang Kim](https://github.com/cnk113) | [Tyler Brassel](https://github.com/tbrassel) | 
+------------ | ------------ |
+<img src="https://avatars1.githubusercontent.com/u/21249710?v=4&s=25" width="150" height="150" /> | <img src="https://avatars3.githubusercontent.com/u/37461300?s=460&v=4" width="150" height="150" /> | 
 
 ## Updates
-
-#### (11/15/2021) Updated to Tensorflow 2. Now req. (Tensorflow >= 2.0)
 
 #### (9/4/2019) Updated install instructions to include Tensorflow for R method.
 
@@ -40,13 +37,13 @@ library(scAlign)
 
 ## Package requirements
 
-scAlign has three dependencies: Python 3, tensorflow (the R package), and tensorflow (the Python package). This is a guide to installing python and Tensorflow on different operating systems. 
+scAlign has three dependencies: Python 3.6.8, tensorflow (the R package), and tensorflow (the Python package). This is a guide to installing python and Tensorflow on different operating systems. Note Python 3.6.x should be installed, not Python 3.7 or higher.
 
 ### (Python)
   #### All platforms:
-  1. [Download install binaries for Python 3 here](https://www.python.org/downloads/release/)
+  1. [Download install binaries for Python 3.6.8 here](https://www.python.org/downloads/release/python-368/)
   #### Alternative (On Windows):
-  1. Download Python 3
+  1. Download Python 3.6.8. Note, newer versions of Python (e.g. 3.7) cannot use TensorFlow at this time. 
   2. Make sure pip is included in the installation.
 
   #### Alternative (On Ubuntu):
@@ -64,4 +61,7 @@ In an R session:
   ```
   install.packages('tensorflow') #install the tensorflow R package (that sits on top of the TensorFlow python package)
   library(tensorflow)
+  
+  install_tensorflow(version="1.15rc2") ## installs CPU version of TensorFlow Python package, use this if you don't have a GPU.
+  #install_tensorflow(version = "gpu", version="1.15rc2") # Use this to install GPU version of Tensorflow Python package
   ```

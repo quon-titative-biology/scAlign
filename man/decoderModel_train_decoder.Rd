@@ -4,14 +4,8 @@
 \alias{decoderModel_train_decoder}
 \title{decoder for scAlign}
 \usage{
-decoderModel_train_decoder(
-  FLAGS,
-  config,
-  mode,
-  data_full,
-  data_emb,
-  all_data_emb
-)
+decoderModel_train_decoder(FLAGS, config, mode, data_full, data_emb,
+  all_data_emb)
 }
 \arguments{
 \item{FLAGS}{Tensorflow run arguments.}

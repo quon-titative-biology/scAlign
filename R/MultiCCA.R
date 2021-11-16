@@ -2,7 +2,7 @@
 #'
 #' @return CCA results
 #'
-#' @param mat.list List of matrix objects
+#' @param mat.list List of matrix objects;
 #' @param niter Optimization parameter
 #' @param num.ccs Number of dimensions
 #' @param standardize To standardize data
@@ -17,15 +17,16 @@ RunMultiCCA <- function(
   num.ccs = 10,
   standardize = TRUE
 ) {
+  set.seed(42)
   num.sets <- length(mat.list)
   if(standardize){
     for (i in 1:num.sets){
-      mat.list[[i]] <- scale(mat.list[[i]], TRUE, TRUE)
+      mat.list[[i]] <- scale(mat.list[[i]], T, T)
     }
   }
   ws <- list()
   for (i in 1:num.sets){
-    ws[[i]] <- irlba(mat.list[[i]], nv = num.ccs)$v[, 1:num.ccs, drop = FALSE]
+    ws[[i]] <- irlba(mat.list[[i]], nv = num.ccs)$v[, 1:num.ccs, drop = F]
   }
   ws.init <- ws
   ws.final <- list()
@@ -71,14 +72,6 @@ RunMultiCCA <- function(
 
 #' Seurat V2 MultiCCA
 #'
-#' @return CCA results
-#'
-#' @param mat.list List of matrix objects
-#' @param i Optimization parameter
-#' @param num.sets Number of sets
-#' @param ws optim
-#' @param ws.final optim
-#'
 #' @keywords internal
 UpdateW <- function(mat.list, i, num.sets, ws, ws.final){
   tots <- 0
@@ -93,12 +86,6 @@ UpdateW <- function(mat.list, i, num.sets, ws, ws.final){
 
 #' Seurat V2 MultiCCA
 #'
-#' @return crit values
-#'
-#' @param mat.list List of matrix objects
-#' @param ws optim
-#' @param num.sets Number of sets
-#'
 #' @keywords internal
 GetCrit <- function(mat.list, ws, num.sets){
   crit <- 0
@@ -111,10 +98,6 @@ GetCrit <- function(mat.list, ws, num.sets){
 }
 
 #' Seurat V2 MultiCCA
-#'
-#' @return l2n
-#'
-#' @param vec vector
 #'
 #' @keywords internal
 l2n <- function(vec){

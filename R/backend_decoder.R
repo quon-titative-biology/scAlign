@@ -12,7 +12,7 @@
 #'
 #' @keywords internal
 decoderModel_emb_to_proj = function(model_func, data, is_training=TRUE){
-  with(tf$compat$v1$variable_scope('net_decode', reuse=is_training), {
+  with(tf$variable_scope('net_decode', reuse=is_training), {
     return(model_func(data, is_training=is_training))
   })
 }
@@ -56,12 +56,12 @@ decoderModel_calc_projection = function(sess, data, data_full, endpoint, test_in
 #' @keywords internal
 decoderModel_add_mse_loss = function(proj, data, mode, debug=TRUE){
   ## Define decoder reconstruction loss
-  loss_decoder = tf$compat$v1$losses$mean_squared_error(data,
+  loss_decoder = tf$losses$mean_squared_error(data,
                                               proj,
                                               weights=1.0)
 
   ## Record loss
-  tf$compat$v1$summary$scalar(paste0('Loss_decoder_', mode), loss_decoder)
+  tf$summary$scalar(paste0('Loss_decoder_', mode), loss_decoder)
 }
 
 #' Builds training operation
@@ -78,12 +78,12 @@ decoderModel_add_mse_loss = function(proj, data, mode, debug=TRUE){
 #' @keywords internal
 decoderModel_create_train_op = function(learning_rate, step){
   ## Collect all loss components
-  train_loss = tf$compat$v1$losses$get_total_loss()
+  train_loss = tf$losses$get_total_loss()
   ## Minimize loss function
-  optimizer = tf$compat$v1$train$AdamOptimizer(learning_rate)
+  optimizer = tf$train$AdamOptimizer(learning_rate)
   train_op = optimizer$minimize(train_loss, step)
   ## Monitor
-  tf$compat$v1$summary$scalar('Learning_Rate', learning_rate)
-  tf$compat$v1$summary$scalar('Loss_Total', train_loss)
+  tf$summary$scalar('Learning_Rate', learning_rate)
+  tf$summary$scalar('Loss_Total', train_loss)
   return(train_op)
 }

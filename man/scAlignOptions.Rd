@@ -4,34 +4,16 @@
 \alias{scAlignOptions}
 \title{Set training options}
 \usage{
-scAlignOptions(
-  steps = 15000,
-  steps.decoder = 10000,
-  batch.size = 150,
-  learning.rate = 1e-04,
-  log.every = 5000,
-  architecture = "large",
-  batch.norm.layer = FALSE,
-  dropout.layer = TRUE,
-  num.dim = 32,
-  perplexity = 30,
-  betas = 0,
-  norm = TRUE,
-  full.norm = FALSE,
-  early.stop = FALSE,
-  walker.loss = TRUE,
-  reconc.loss = FALSE,
-  walker.weight = 1,
-  classifier.weight = 1,
-  classifier.delay = NA,
-  gpu.device = "0",
-  seed = 1234
-)
+scAlignOptions(steps = 15000, batch.size = 150,
+  learning.rate = 1e-04, log.every = 5000, architecture = "large",
+  batch.norm.layer = FALSE, dropout.layer = TRUE, num.dim = 32,
+  perplexity = 30, betas = 0, norm = TRUE, full.norm = FALSE,
+  early.stop = FALSE, walker.loss = TRUE, reconc.loss = FALSE,
+  walker.weight = 1, classifier.weight = 1, classifier.delay = NA,
+  gpu.device = "0", seed = 1234)
 }
 \arguments{
 \item{steps}{(default: 15000) Number of training iterations for neural networks.}
-
-\item{steps.decoder}{Number of training iterations for neural networks.}
 
 \item{batch.size}{(default: 150) Number of input samples per training batch.}
 

@@ -4,19 +4,10 @@
 \alias{scAlignMulti}
 \title{Run scAlignMultiway alignment}
 \usage{
-scAlignMulti(
-  sce.object,
-  options = scAlignOptions(),
-  encoder.data,
-  decoder.data = encoder.data,
-  reference.data = "NULL",
-  supervised = "none",
-  run.encoder = TRUE,
-  run.decoder = FALSE,
-  log.dir = "./models/",
-  log.results = FALSE,
-  device = "CPU"
-)
+scAlignMulti(sce.object, options = scAlignOptions(), encoder.data,
+  decoder.data = encoder.data, reference.data = "NULL",
+  supervised = "none", run.encoder = TRUE, run.decoder = FALSE,
+  log.dir = "./models/", log.results = FALSE, device = "CPU")
 }
 \arguments{
 \item{sce.object}{scAlign object.}
@@ -86,7 +77,7 @@ scAlign = scAlignMulti(scAlign,
                    supervised='none',
                    run.encoder=TRUE,
                    run.decoder=FALSE,
-                   log.dir=file.path(tempdir(),'gene_input'),
+                   log.dir=file.path('~/models','gene_input'),
                    device="CPU")
 
 }

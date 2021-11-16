@@ -4,12 +4,8 @@
 \alias{encoderModel_data_to_embedding}
 \title{Compute embedding for mini-batch}
 \usage{
-encoderModel_data_to_embedding(
-  model_func,
-  data,
-  is_training = TRUE,
-  scope = ""
-)
+encoderModel_data_to_embedding(model_func, data, is_training = TRUE,
+  scope = "")
 }
 \arguments{
 \item{model_func}{Network op in graph}

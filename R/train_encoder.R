@@ -16,9 +16,9 @@
 #' @keywords internal
 define_kernel_matrix = function(method, data=NULL, labels=NULL, data_shape, perplexity=NULL, diag="zero"){
     ## Defines the similarity matrix T used for asssociation loss
-    kernel = encoderModel_gaussian_kernel(data=tf$cast(data, tf$float64), dim=as.numeric(data_shape), perplexity=perplexity, diag=diag)
+    kernel = encoderModel_gaussian_kernel(data=tf$compat$v1$cast(data, tf$compat$v1$float64), dim=as.numeric(data_shape), perplexity=perplexity, diag=diag)
     ## Cast down for consistent data type
-    return(tf$cast(kernel, tf$float32))
+    return(tf$compat$v1$cast(kernel, tf$compat$v1$float32))
 }
 
 #' encoder for scAlign
@@ -48,18 +48,18 @@ encoderModel_train_encoder = function(FLAGS, CV, config,
                                       target_data, target_labels){
 
   ## Define network structure
-  graph = tf$Graph()
+  graph = tf$compat$v1$Graph()
   with(graph$as_default(), {
     print("Graph construction")
     ## Set up inputs. Mini-batch via placeholder and dataset iterators
-    with(tf$name_scope("source_data"), {
+    with(tf$compat$v1$name_scope("source_data"), {
       if(FLAGS$supervised == obj1_name | FLAGS$supervised == "both"){
-        source_data_ph   = tf$placeholder(tf$float32, shape(NULL,data_shape))
-        source_labels_ph = tf$placeholder(tf$int32, shape(NULL))
-        source_dataset = tf$data$Dataset$from_tensor_slices(tuple(source_data_ph, source_labels_ph))
+        source_data_ph   = tf$compat$v1$placeholder(tf$compat$v1$float32, shape(NULL,data_shape))
+        source_labels_ph = tf$compat$v1$placeholder(tf$compat$v1$int32, shape(NULL))
+        source_dataset = tf$compat$v1$data$Dataset$from_tensor_slices(tuple(source_data_ph, source_labels_ph))
       }else{
-        source_data_ph   = tf$placeholder(tf$float32, shape(NULL,data_shape))
-        source_dataset = tf$data$Dataset$from_tensor_slices(source_data_ph)
+        source_data_ph   = tf$compat$v1$placeholder(tf$compat$v1$float32, shape(NULL,data_shape))
+        source_dataset = tf$compat$v1$data$Dataset$from_tensor_slices(source_data_ph)
       }
       source_dataset = source_dataset$shuffle(dim(source_data)[1])
       source_dataset = source_dataset$`repeat`()
@@ -69,14 +69,14 @@ encoderModel_train_encoder = function(FLAGS, CV, config,
       if(typeof(source_batch) != "list"){source_batch = list(source_batch)}
     })
 
-    with(tf$name_scope("target_data"), {
+    with(tf$compat$v1$name_scope("target_data"), {
       if(FLAGS$supervised == obj2_name | FLAGS$supervised == "both"){
-        target_data_ph   = tf$placeholder(tf$float32, shape(NULL,data_shape))
-        target_labels_ph = tf$placeholder(tf$int32, shape(NULL))
-        target_dataset = tf$data$Dataset$from_tensor_slices(tuple(target_data_ph, target_labels_ph))
+        target_data_ph   = tf$compat$v1$placeholder(tf$compat$v1$float32, shape(NULL,data_shape))
+        target_labels_ph = tf$compat$v1$placeholder(tf$compat$v1$int32, shape(NULL))
+        target_dataset = tf$compat$v1$data$Dataset$from_tensor_slices(tuple(target_data_ph, target_labels_ph))
       }else{
-        target_data_ph   = tf$placeholder(tf$float32, shape(NULL,data_shape))
-        target_dataset = tf$data$Dataset$from_tensor_slices(target_data_ph)
+        target_data_ph   = tf$compat$v1$placeholder(tf$compat$v1$float32, shape(NULL,data_shape))
+        target_dataset = tf$compat$v1$data$Dataset$from_tensor_slices(target_data_ph)
       }
       target_dataset = target_dataset$shuffle(dim(target_data)[1])
       target_dataset = target_dataset$`repeat`()
@@ -96,13 +96,13 @@ encoderModel_train_encoder = function(FLAGS, CV, config,
 
     ## normalize per batch
     if(FLAGS$norm == TRUE){
-      source_batch[[1]] = tf$nn$l2_normalize(source_batch[[1]], axis=as.integer(1))
-      target_batch[[1]] = tf$nn$l2_normalize(target_batch[[1]], axis=as.integer(1))
+      source_batch[[1]] = tf$compat$v1$nn$l2_normalize(source_batch[[1]], axis=as.integer(1))
+      target_batch[[1]] = tf$compat$v1$nn$l2_normalize(target_batch[[1]], axis=as.integer(1))
     }
 
     ## Define test first, also acts as network initializer.
     ## tf.get_variable() is only called when reuse=FALSE for named/var scopes...
-    test_in = tf$placeholder(tf$float32, shape(NULL,data_shape), 'test_in')
+    test_in = tf$compat$v1$placeholder(tf$compat$v1$float32, shape(NULL,data_shape), 'test_in')
     test_emb = encoderModel_data_to_embedding(model_function, test_in, is_training=FALSE)
     test_logit = encoderModel_embedding_to_logit(test_emb, num_labels, is_training=FALSE)
 
@@ -157,16 +157,16 @@ encoderModel_train_encoder = function(FLAGS, CV, config,
                              target_batch[[2]],
                              weight=FLAGS$logit_weight)
           }else if(FLAGS$supervised == 'both'){
-              logits = encoderModel_embedding_to_logit(tf$concat(list(source_emb, target_emb), axis=as.integer(0)), num_labels)
+              logits = encoderModel_embedding_to_logit(tf$compat$v1$concat(list(source_emb, target_emb), axis=as.integer(0)), num_labels)
               encoderModel_add_logit_loss(logits,
-                             tf$concat(list(source_batch[[2]], target_batch[[2]]), axis=as.integer(0)),
+                             tf$compat$v1$concat(list(source_batch[[2]], target_batch[[2]]), axis=as.integer(0)),
                              weight=FLAGS$logit_weight)
           }else{print("Invalid FLAGS$supervised"); quit("no");}
       }
     }
 
     if(FLAGS$reconc_loss == TRUE){
-      with(tf$variable_scope("source_decoder"), {
+      with(tf$compat$v1$variable_scope("source_decoder"), {
         model_function_decoder_src = partial(
             match.fun(paste0("decoder_", FLAGS$decoder)),
             emb_size=FLAGS$emb_size,
@@ -177,7 +177,7 @@ encoderModel_train_encoder = function(FLAGS, CV, config,
 
         ## Define test first, also acts as network initializer.
         ## tf.get_variable() is only called when reuse=FALSE for named/var scopes...
-        test_in_src = tf$placeholder(tf$float32, shape(NULL, FLAGS$emb_size), 'test_in')
+        test_in_src = tf$compat$v1$placeholder(tf$compat$v1$float32, shape(NULL, FLAGS$emb_size), 'test_in')
         test_proj_src = decoderModel_emb_to_proj(model_function_decoder_src, test_in_src, is_training=FALSE)
 
         ## Define decoder op for training
@@ -187,7 +187,7 @@ encoderModel_train_encoder = function(FLAGS, CV, config,
         decoderModel_add_mse_loss(proj_src, source_batch[[1]], 'source')
       })
 
-      with(tf$variable_scope("target_decoder"), {
+      with(tf$compat$v1$variable_scope("target_decoder"), {
         model_function_decoder_trg = partial(
             match.fun(paste0("decoder_", FLAGS$decoder)),
             emb_size=FLAGS$emb_size,
@@ -198,7 +198,7 @@ encoderModel_train_encoder = function(FLAGS, CV, config,
 
         ## Define test first, also acts as network initializer.
         ## tf.get_variable() is only called when reuse=FALSE for named/var scopes...
-        test_in_trg = tf$placeholder(tf$float32, shape(NULL, FLAGS$emb_size), 'test_in')
+        test_in_trg = tf$compat$v1$placeholder(tf$compat$v1$float32, shape(NULL, FLAGS$emb_size), 'test_in')
         test_proj_trg = decoderModel_emb_to_proj(model_function_decoder_trg, test_in_trg, is_training=FALSE)
 
         ## Define decoder op for training
@@ -210,26 +210,26 @@ encoderModel_train_encoder = function(FLAGS, CV, config,
     }
 
     ## Global training step
-    step = tf$train$get_or_create_global_step()
+    step = tf$compat$v1$train$get_or_create_global_step()
 
     ## Use a placeholder in the graph for user-defined learning rate
-    decay_step = tf$placeholder(tf$float32)
+    decay_step = tf$compat$v1$placeholder(tf$compat$v1$float32)
 
     ## Set up learning rate
     t_learning_rate = .learning_rate(step, decay_step, FLAGS)
 
     ## Create training operation
     train_op = encoderModel_create_train_op(t_learning_rate, step)
-    loss_op = tf$losses$get_total_loss()
-    summary_op = tf$summary$merge_all()
+    loss_op = tf$compat$v1$losses$get_total_loss()
+    summary_op = tf$compat$v1$summary$merge_all()
 
     if(FLAGS$log.results == TRUE){
 
       ## Write summaries
-      summary_writer = tf$summary$FileWriter(file.path(paste0(FLAGS$logdir, '/model_', as.character(CV), "/")), graph)
+      summary_writer = tf$compat$v1$summary$FileWriter(file.path(paste0(FLAGS$logdir, '/model_', as.character(CV), "/")), graph)
 
       ## Save model
-      saver <- tf$train$Saver(max_to_keep=FLAGS$max_checkpoints,
+      saver <- tf$compat$v1$train$Saver(max_to_keep=FLAGS$max_checkpoints,
                               keep_checkpoint_every_n_hours=FLAGS$keep_checkpoint_every_n_hours)
     }
   }) ## End graphdef
@@ -237,24 +237,24 @@ encoderModel_train_encoder = function(FLAGS, CV, config,
   ## Training scope
   sess = NULL ## Appease R check
   loss_tracker = c(); patience_count = 0;
-  with(tf$Session(graph=graph, config=config) %as% sess, {
+  with(tf$compat$v1$Session(graph=graph, config=config) %as% sess, {
       ## Set the logging level for tensorflow to only fatal issues
-      tf$logging$set_verbosity(tf$logging$FATAL)
+      tf$compat$v1$logging$set_verbosity(tf$compat$v1$logging$FATAL)
 
       ## Define seed at the graph-level
       ## From docs: If the graph-level seed is set, but the operation seed is not:
       ## The system deterministically picks an operation seed in conjunction with
       ## the graph-level seed so that it gets a unique random sequence.
-      if(FLAGS$random_seed != 0){tf$set_random_seed(FLAGS$random_seed)}
+      if(FLAGS$random_seed != 0){tf$compat$v1$set_random_seed(FLAGS$random_seed)}
 
       ## Normalize full data matrix
       if(FLAGS$full_norm == TRUE){
-        source_data = sess$run(tf$nn$l2_normalize(source_data, axis=as.integer(1)))
-        target_data = sess$run(tf$nn$l2_normalize(target_data, axis=as.integer(1)))
+        source_data = sess$run(tf$compat$v1$nn$l2_normalize(source_data, axis=as.integer(1)))
+        target_data = sess$run(tf$compat$v1$nn$l2_normalize(target_data, axis=as.integer(1)))
       }
 
       ## Initialize everything
-      tf$global_variables_initializer()$run()
+      tf$compat$v1$global_variables_initializer()$run()
       print("Done random initialization")
 
       ## Create results dir
@@ -263,7 +263,7 @@ encoderModel_train_encoder = function(FLAGS, CV, config,
       }
 
       # ## Assert that nothing more can be added to the graph
-      # #tf$get_default_graph().finalize()
+      # #tf$compat$v1$get_default_graph().finalize()
 
       ## Initialize the Dataset iterators and feed correct arguments based on supervised vs. unsupervised
       if(is.element(FLAGS$supervised, c(obj1_name, "both"))){
@@ -296,7 +296,7 @@ encoderModel_train_encoder = function(FLAGS, CV, config,
 
         ## Exceeded patience, now ready to stop. (Patience is == TRUE once patience_count >= 50, otherwise [0-49])
         if(is.logical(patience_count)){
-          FLAGS$max_steps = min(step + 1000, FLAGS$max_steps) ## 1000 more steps with fast learning_rate decay
+          FLAGS$max_steps = step + 1000 ## 1000 more steps with fast learning_rate decay
           FLAGS$early_stopping = FALSE
           patience_count = -1
           print("=========================================================")

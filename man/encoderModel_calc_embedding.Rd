@@ -4,8 +4,14 @@
 \alias{encoderModel_calc_embedding}
 \title{Compute embedding for complete data after training}
 \usage{
-encoderModel_calc_embedding(sess, data, endpoint, test_in, FLAGS,
-  batch_size = 150)
+encoderModel_calc_embedding(
+  sess,
+  data,
+  endpoint,
+  test_in,
+  FLAGS,
+  batch_size = 150
+)
 }
 \arguments{
 \item{sess}{Current tensorflow session}

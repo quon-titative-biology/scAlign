@@ -4,8 +4,14 @@
 \alias{define_kernel_matrix}
 \title{define kernel matrix}
 \usage{
-define_kernel_matrix(method, data = NULL, labels = NULL, data_shape,
-  perplexity = NULL, diag = "zero")
+define_kernel_matrix(
+  method,
+  data = NULL,
+  labels = NULL,
+  data_shape,
+  perplexity = NULL,
+  diag = "zero"
+)
 }
 \arguments{
 \item{method}{Kernel to compute pairwise cell similarity}

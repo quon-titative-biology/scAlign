@@ -4,9 +4,19 @@
 \alias{encoderModel_train_encoder}
 \title{encoder for scAlign}
 \usage{
-encoderModel_train_encoder(FLAGS, CV, config, num_labels, data_shape,
-  obj1_name, obj2_name, source_data, source_labels, target_data,
-  target_labels)
+encoderModel_train_encoder(
+  FLAGS,
+  CV,
+  config,
+  num_labels,
+  data_shape,
+  obj1_name,
+  obj2_name,
+  source_data,
+  source_labels,
+  target_data,
+  target_labels
+)
 }
 \arguments{
 \item{FLAGS}{Tensorflow run arguments.}

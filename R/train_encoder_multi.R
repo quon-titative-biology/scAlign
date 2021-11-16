@@ -16,9 +16,9 @@
 #' @keywords internal
 compute_kernel_matrix = function(data, data_shape, labels=NULL, method=NULL, perplexity=30, diag="zero"){
     ## Defines the similarity matrix T used for asssociation loss
-    kernel = encoderModel_gaussian_kernel(data=tf$cast(data, tf$float64), dim=data_shape, perplexity=perplexity, diag=diag)
+    kernel = encoderModel_gaussian_kernel(data=tf$compat$v1$cast(data, tf$compat$v1$float64), dim=data_shape, perplexity=perplexity, diag=diag)
     ## Cast down for consistent data type
-    return(tf$cast(kernel, tf$float32))
+    return(tf$compat$v1$cast(kernel, tf$compat$v1$float32))
 }
 
 #' encoder for scAlign
@@ -48,7 +48,7 @@ encoderModel_train_encoder_multi = function(FLAGS, CV, config,
                                             labels){
 
   ## Define network structure
-  graph = tf$Graph()
+  graph = tf$compat$v1$Graph()
   with(graph$as_default(), {
     print("Graph construction")
     # Create function that defines the network.
@@ -62,34 +62,34 @@ encoderModel_train_encoder_multi = function(FLAGS, CV, config,
 
     ## Define test first, also acts as network initializer.
     ## tf.get_variable() is only called when reuse=FALSE for named/var scopes...
-    test_in = tf$placeholder(tf$float32, shape(NULL,data_shape), 'test_in')
+    test_in = tf$compat$v1$placeholder(tf$compat$v1$float32, shape(NULL,data_shape), 'test_in')
     test_emb = encoderModel_data_to_embedding(model_function, test_in, is_training=FALSE)
     test_logit = encoderModel_embedding_to_logit(test_emb, num_labels, is_training=FALSE)
 
     ## Set up inputs. Mini-batch via placeholder and dataset iterators
     for(name in unique(names)){
-      with(tf$variable_scope(name), {
-        data_ph = tf$placeholder(tf$float32, shape(NULL, data_shape))
-        dataset = tf$data$Dataset$from_tensor_slices(data_ph)
+      with(tf$compat$v1$variable_scope(name), {
+        data_ph = tf$compat$v1$placeholder(tf$compat$v1$float32, shape(NULL, data_shape))
+        dataset = tf$compat$v1$data$Dataset$from_tensor_slices(data_ph)
         dataset = dataset$shuffle(dim(data)[1])
         dataset = dataset$`repeat`()
         dataset = dataset$batch(FLAGS$unsup_batch_size)
         iter    = dataset$make_initializable_iterator()
         batch   = iter$get_next()
-        batch   = tf$nn$l2_normalize(batch, axis=as.integer(1), name=paste0("data"))
+        batch   = tf$compat$v1$nn$l2_normalize(batch, axis=as.integer(1), name=paste0("data"))
       })
       emb = encoderModel_data_to_embedding(model_function, batch, is_training=TRUE, scope=paste0("_",name))
-      emb = tf$identity(emb, name=paste0(name,"_emb"))
+      emb = tf$compat$v1$identity(emb, name=paste0(name,"_emb"))
     }
 
     if(FLAGS$ref %in% unique(names)){datasets=FLAGS$ref}else{datasets=unique(names)}
     for(name_ref in datasets){
       source_data = graph$get_tensor_by_name(paste0(name_ref,"/data:0"))
       source_emb = graph$get_tensor_by_name(paste0(name_ref,"_emb:0"))
-      with(tf$name_scope(name_ref), {
+      with(tf$compat$v1$name_scope(name_ref), {
         for(name_target in setdiff(unique(names), name_ref)){
           target_emb = graph$get_tensor_by_name(paste0(name_target,"_emb:0"))
-          with(tf$variable_scope(name_ref), {
+          with(tf$compat$v1$variable_scope(name_ref), {
             print(paste0("Adding ", paste0(name_ref,"-",name_target)))
             ## Add source assoc loss
             T_source = compute_kernel_matrix(data=source_data, data_shape=FLAGS$unsup_batch_size, method=FLAGS$kernel, perplexity=FLAGS$perplexity)
@@ -106,26 +106,26 @@ encoderModel_train_encoder_multi = function(FLAGS, CV, config,
       })
     }
     ## Global training step
-    step = tf$train$get_or_create_global_step()
+    step = tf$compat$v1$train$get_or_create_global_step()
 
     ## Use a placeholder in the graph for user-defined learning rate
-    decay_step = tf$placeholder(tf$float32)
+    decay_step = tf$compat$v1$placeholder(tf$compat$v1$float32)
 
     ## Set up learning rate
     t_learning_rate = .learning_rate(step, decay_step, FLAGS)
 
     ## Create training operation
     train_op = encoderModel_create_train_op(t_learning_rate, step)
-    loss_op = tf$losses$get_total_loss()
-    summary_op = tf$summary$merge_all()
+    loss_op = tf$compat$v1$losses$get_total_loss()
+    summary_op = tf$compat$v1$summary$merge_all()
 
     if(FLAGS$log.results == TRUE){
 
       ## Write summaries
-      summary_writer = tf$summary$FileWriter(file.path(paste0(FLAGS$logdir, '/model_', as.character(CV), "/")), graph)
+      summary_writer = tf$compat$v1$summary$FileWriter(file.path(paste0(FLAGS$logdir, '/model_', as.character(CV), "/")), graph)
 
       ## Save model
-      saver <- tf$train$Saver(max_to_keep=FLAGS$max_checkpoints,
+      saver <- tf$compat$v1$train$Saver(max_to_keep=FLAGS$max_checkpoints,
                               keep_checkpoint_every_n_hours=FLAGS$keep_checkpoint_every_n_hours)
     }
   }) ## End graphdef
@@ -133,26 +133,26 @@ encoderModel_train_encoder_multi = function(FLAGS, CV, config,
   ## Training scope
   sess = NULL ## Appease R check
   loss_tracker = c(); patience_count = 0;
-  with(tf$Session(graph=graph, config=config) %as% sess, {
+  with(tf$compat$v1$Session(graph=graph, config=config) %as% sess, {
       ## Set the logging level for tensorflow to only fatal issues
-      tf$logging$set_verbosity(tf$logging$FATAL)
+      tf$compat$v1$logging$set_verbosity(tf$compat$v1$logging$FATAL)
 
       ## Define seed at the graph-level
       ## From docs: If the graph-level seed is set, but the operation seed is not:
       ## The system deterministically picks an operation seed in conjunction with
       ## the graph-level seed so that it gets a unique random sequence.
-      if(FLAGS$random_seed != 0){tf$set_random_seed(FLAGS$random_seed)}
+      if(FLAGS$random_seed != 0){tf$compat$v1$set_random_seed(FLAGS$random_seed)}
 
       ## Normalize full data matrix
       # if(FLAGS$full_norm == TRUE){
-      #   source_data = sess$run(tf$nn$l2_normalize(source_data, axis=as.integer(1)))
-      #   target_data = sess$run(tf$nn$l2_normalize(target_data, axis=as.integer(1)))
+      #   source_data = sess$run(tf$compat$v1$nn$l2_normalize(source_data, axis=as.integer(1)))
+      #   target_data = sess$run(tf$compat$v1$nn$l2_normalize(target_data, axis=as.integer(1)))
       # }
 
-      # for(op in tf$get_default_graph()$get_operations()){print(op$name)}
+      # for(op in tf$compat$v1$get_default_graph()$get_operations()){print(op$name)}
 
       ## Initialize everything
-      tf$global_variables_initializer()$run()
+      tf$compat$v1$global_variables_initializer()$run()
       print("Done random initialization")
 
       ## Create results dir
@@ -161,12 +161,12 @@ encoderModel_train_encoder_multi = function(FLAGS, CV, config,
       }
 
       # ## Assert that nothing more can be added to the graph
-      # #tf$get_default_graph().finalize()
+      # #tf$compat$v1$get_default_graph().finalize()
 
       ## Initialize the Dataset iterators and feed correct arguments based on supervised vs. unsupervised
       for(name in unique(names)){
-        iter = tf$get_default_graph()$get_operation_by_name(paste0(name,"/MakeIterator"))
-        placeholder = tf$get_default_graph()$get_tensor_by_name(paste0(name,"/Placeholder:0"))
+        iter = tf$compat$v1$get_default_graph()$get_operation_by_name(paste0(name,"/MakeIterator"))
+        placeholder = tf$compat$v1$get_default_graph()$get_tensor_by_name(paste0(name,"/Placeholder:0"))
         sess$run(iter, feed_dict=dict(placeholder = data[which(names == name),]))
       }
 
@@ -202,7 +202,8 @@ encoderModel_train_encoder_multi = function(FLAGS, CV, config,
         if(((step %% FLAGS$log_every_n_steps == 0) | (step == 1) | (step == FLAGS$max_steps)) & FLAGS$log.results == TRUE){
           if(step > 1){ print("==================== Saving results =====================") } ## Suppress first save
           ## Save embeddings
-          emb = encoderModel_calc_embedding(sess, data, test_emb, test_in, FLAGS)
+          data_norm = sess$run(tf$compat$v1$nn$l2_normalize(data, axis=as.integer(1), name=paste0("data")))
+          emb = encoderModel_calc_embedding(sess, data_norm, test_emb, test_in, FLAGS)
           write.table(emb, file.path(paste0(FLAGS$logdir, '/model_', as.character(CV), '/train/emb_activations_', as.character(step), '.csv')), sep=",", col.names=FALSE, row.names=FALSE)
 
           ## Write summaries

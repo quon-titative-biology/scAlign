@@ -19,15 +19,15 @@ decoderModel_train_decoder = function(FLAGS, config, mode,
                                       data_full, data_emb, all_data_emb){
 
   ## Define network structure
-  tf$reset_default_graph()
-  graph = tf$Graph()
+  tf$compat$v1$reset_default_graph()
+  graph = tf$compat$v1$Graph()
   with(graph$as_default(), {
     print("Graph construction")
-    with(tf$variable_scope("decoder", reuse=tf$AUTO_REUSE), {
-      with(tf$name_scope("decoder_data"), {
-        data_emb_ph  = tf$placeholder(tf$float32, shape(NULL,as.integer(ncol(data_emb))))
-        data_full_ph = tf$placeholder(tf$float32, shape(NULL,as.integer(ncol(data_full))))
-        dataset      = tf$data$Dataset$from_tensor_slices(tuple(data_emb_ph, data_full_ph))
+    with(tf$compat$v1$variable_scope("decoder", reuse=tf$compat$v1$AUTO_REUSE), {
+      with(tf$compat$v1$name_scope("decoder_data"), {
+        data_emb_ph  = tf$compat$v1$placeholder(tf$compat$v1$float32, shape(NULL,as.integer(ncol(data_emb))))
+        data_full_ph = tf$compat$v1$placeholder(tf$compat$v1$float32, shape(NULL,as.integer(ncol(data_full))))
+        dataset      = tf$compat$v1$data$Dataset$from_tensor_slices(tuple(data_emb_ph, data_full_ph))
         dataset      = dataset$shuffle(dim(data_emb)[1])
         dataset      = dataset$`repeat`()
         dataset      = dataset$batch(FLAGS$unsup_batch_size)
@@ -44,7 +44,7 @@ decoderModel_train_decoder = function(FLAGS, config, mode,
       #     batch_norm=FALSE)
 
       ## Architectures (parameterizing dists)
-      decoder_func = tf$make_template('decoder',
+      decoder_func = tf$compat$v1$make_template('decoder',
                                       match.fun(paste0("decoder_", FLAGS$decoder)),
                                       emb_size=FLAGS$emb_size,
                                       final_dim=as.integer(ncol(data_full)),
@@ -53,18 +53,18 @@ decoderModel_train_decoder = function(FLAGS, config, mode,
                                       batch_norm=FALSE)
 
       ## Global training step
-      global_step = tf$train$get_or_create_global_step()
+      global_step = tf$compat$v1$train$get_or_create_global_step()
 
       ## Define decoder op for training
       proj = decoder_func(inputs=mini_batch[[1]], is_training=TRUE)
 
       ## Define decoder reconstruction loss
-      loss_decoder = tf$losses$mean_squared_error(mini_batch[[2]],
+      loss_decoder = tf$compat$v1$losses$mean_squared_error(mini_batch[[2]],
                                                   proj)
 
       # ## Set up learning rate
-      learning_rate = tf$maximum(
-                        tf$train$exponential_decay(
+      learning_rate = tf$compat$v1$maximum(
+                        tf$compat$v1$train$exponential_decay(
                            FLAGS$learning_rate,
                            global_step,
                            5000,
@@ -74,26 +74,26 @@ decoderModel_train_decoder = function(FLAGS, config, mode,
       ## Create training operation
       train_loss = loss_decoder
       ## Minimize loss function
-      with(tf$name_scope("Adam"), {
-        optimizer = tf$train$AdamOptimizer(learning_rate)
+      with(tf$compat$v1$name_scope("Adam"), {
+        optimizer = tf$compat$v1$train$AdamOptimizer(learning_rate)
         train_op = optimizer$minimize(train_loss, global_step=global_step)
       })
 
       ## Monitor
-      tf$summary$scalar('Learning_Rate', learning_rate)
-      tf$summary$scalar('Loss_Total', loss_decoder)
+      tf$compat$v1$summary$scalar('Learning_Rate', learning_rate)
+      tf$compat$v1$summary$scalar('Loss_Total', loss_decoder)
 
-      summary_op = tf$summary$merge_all()
+      summary_op = tf$compat$v1$summary$merge_all()
 
       ## Write summaries
-      summary_writer = tf$summary$FileWriter(file.path(paste0(FLAGS$logdir, '/', as.character(mode), "_decoder/")), graph)
+      summary_writer = tf$compat$v1$summary$FileWriter(file.path(paste0(FLAGS$logdir, '/', as.character(mode), "_decoder/")), graph)
 
       ## Save model
-      saver <- tf$train$Saver(max_to_keep=FLAGS$max_checkpoints,
+      saver <- tf$compat$v1$train$Saver(max_to_keep=FLAGS$max_checkpoints,
                               keep_checkpoint_every_n_hours=FLAGS$keep_checkpoint_every_n_hours)
 
       ## Define decoder op for training
-      test_in = tf$placeholder(tf$float32, shape(NULL, as.integer(ncol(data_emb))), 'test_in')
+      test_in = tf$compat$v1$placeholder(tf$compat$v1$float32, shape(NULL, as.integer(ncol(data_emb))), 'test_in')
       test_proj = decoder_func(inputs=test_in, is_training=FALSE)
     })
   }) ## End graphdef
@@ -101,17 +101,17 @@ decoderModel_train_decoder = function(FLAGS, config, mode,
 
   ## Training scope
   sess = NULL ## Appease R check
-  with(tf$Session(graph=graph, config=config) %as% sess, {
+  with(tf$compat$v1$Session(graph=graph, config=config) %as% sess, {
       ## Set the logging level for tensorflow to only fatal issues
-      tf$logging$set_verbosity(tf$logging$FATAL)
+      tf$compat$v1$logging$set_verbosity(tf$compat$v1$logging$FATAL)
       ## Define seed at the graph-level
       ## From docs: If the graph-level seed is set, but the operation seed is not:
       ## The system deterministically picks an operation seed in conjunction with
       ## the graph-level seed so that it gets a unique random sequence.s
-      if(FLAGS$random_seed != 0){tf$set_random_seed(FLAGS$random_seed)}
+      if(FLAGS$random_seed != 0){tf$compat$v1$set_random_seed(FLAGS$random_seed)}
 
       ## Initialize everything
-      tf$global_variables_initializer()$run()
+      tf$compat$v1$global_variables_initializer()$run()
       print("Done random initialization")
 
       ## Initialize dataset iterator

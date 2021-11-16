@@ -1,2 +1,5 @@
+Changes in version 1.5.60 (2021-05-18)
++ Saving to tempdir instead of user home
+
 Changes in version 0.99.0 (2019-02-05)
 + Submitted to Bioconductor

@@ -4,8 +4,16 @@
 \alias{encoderModel_train_encoder_multi}
 \title{encoder for scAlign}
 \usage{
-encoderModel_train_encoder_multi(FLAGS, CV, config, num_labels, data_shape,
-  names, data, labels)
+encoderModel_train_encoder_multi(
+  FLAGS,
+  CV,
+  config,
+  num_labels,
+  data_shape,
+  names,
+  data,
+  labels
+)
 }
 \arguments{
 \item{FLAGS}{Tensorflow run arguments.}

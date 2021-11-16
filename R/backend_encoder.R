@@ -79,9 +79,6 @@ encoderModel_add_logit_loss = function(logits, labels, weight=1.0){
    tf$compat$v1$summary$histogram('weights_label', weight)
    ## Add clossifier
    with(tf$compat$v1$name_scope('loss_classifier'), {
-       print(logits)
-       print(tf$shape(logits))
-       print(logits$get_shape())
        logit_loss = tf$compat$v1$losses$softmax_cross_entropy(
            tf$compat$v1$one_hot(labels, logits$get_shape()[-1]$as_list()),
            logits,
